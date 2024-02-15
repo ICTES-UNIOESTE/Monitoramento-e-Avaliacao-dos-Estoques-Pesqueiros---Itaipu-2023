@@ -643,22 +643,22 @@ plot(dispersions2, cex=1.3, pch=15:17,
 
 # Distribuição de tamanho #####
 min(BioAnual23$CP, na.rm=TRUE);max(BioAnual23$CP, na.rm=TRUE);mean(BioAnual23$CP, na.rm=TRUE)
-jpeg(filename = "Res4_Tamanhos.jpeg",
-     width = 18, height = 13, units = "cm", pointsize = 12,
-     quality = 100, res=300)
+#jpeg(filename = "Res4_Tamanhos.jpeg",
+ #    width = 18, height = 13, units = "cm", pointsize = 12,
+  #   quality = 100, res=300)
 par(mfrow=c(4,1), mar=c(1,0,1,0), oma=c(4,6,1,0))
-x<-hist(BioAnual23$CP, main="", col = "yellow1", xaxt="n")
+hist(BioAnual23$CP, main="", col = "white", xaxt="n")
 range(BioAnual23$CP, na.rm=TRUE)
 mean(BioAnual23$CP, na.rm=TRUE)
 mtext("Geral", side=3, line=0, outer=F, cex=1.25)
 abline(v=mean(BioAnual23$CP, na.rm=T), col="black",lty=1, lwd=3)
-hist(BioAnual23$CP[BioAnual23$Zona=="Fluvial"], main="",col = "deepskyblue", breaks=x$breaks, xaxt="n")
+hist(BioAnual23$CP[BioAnual23$Zona=="Fluvial"], main="",col = "#045e9a", breaks=x$breaks, xaxt="n")
 mtext("Fluvial", side=3, line=0, outer=F, cex=1.25)
 abline(v=mean(BioAnual23$CP[BioAnual23$Zona=="Fluvial"], na.rm=T), col="black",lty=1, lwd=3)
-hist(BioAnual23$CP[BioAnual23$Zona=="Transição"], main="",col = "red", breaks=x$breaks, xaxt="n")
+hist(BioAnual23$CP[BioAnual23$Zona=="Transição"], main="",col = "#da2420", breaks=x$breaks, xaxt="n")
 mtext("Transição", side=3, line=0, outer=F, cex=1.25)
 abline(v=mean(BioAnual23$CP[BioAnual23$Zona=="Transição"], na.rm=T), col="black",lty=1, lwd=3)
-hist(BioAnual23$CP[BioAnual23$Zona=="Lacustre"], main="",col = "chartreuse3", xlab=, breaks=x$breaks)
+hist(BioAnual23$CP[BioAnual23$Zona=="Lacustre"], main="",col = "#009241", xlab=, breaks=x$breaks)
 abline(v=mean(BioAnual23$CP[BioAnual23$Zona=="Lacustre"], na.rm=T), col="black",lty=1, lwd=3)
 mtext("Lacustre", side=3, line=0, outer=F, cex=1.25)
 mtext("Comprimento Padrão (cm)", side=1, line=2, outer=T, cex=1.25)
@@ -669,6 +669,7 @@ dev.off()
 TabParametros <- matrix(NA, nrow=length(Spp), ncol=6)
 colnames(TabParametros) <- c("CP.min", "CP.max", "WT.min", "WT.max","a","b")
 rownames(TabParametros) <- Spp
+i=1
 for(i in 1:length(Spp)){
   TabParametros[i,1:2] <- range(BioAnual23$CP[BioAnual23$Genero==Spp[i]], na.rm=TRUE)
   TabParametros[i,3:4] <- range(BioAnual23$Peso.total..g.[BioAnual23$Genero==Spp[i]], na.rm=TRUE)
@@ -681,6 +682,9 @@ for(i in 1:length(Spp)){
   }
 }
 TabParametros
+TabParametros[is.infinite(TabParametros)] <- NA
+library(xlsx)
+write.xlsx(TabParametros, file = "TabParametros.xlsx")
 
 # Reprodução #####
 repG <- table(BioAnual23$Estagio)[c(2,3,5,1,4)]
@@ -690,9 +694,9 @@ repL <- table(BioAnual23$Estagio[BioAnual23$Zona=="Lacustre"])[c(2,3,5,1,4)]
 repMat<-t(as.matrix(rbind(repL,repT,repF,repG)))
 colnames(repMat) <- c("Lacustre", "Transição", "Fluvial", "Geral")
 round(decostand(repMat, method="total", MARGIN = 2)*100,2)
-jpeg(filename = "Res5_Reprod.jpeg",
-     width = 18, height = 13, units = "cm", pointsize = 12,
-     quality = 100, res=300)
+#jpeg(filename = "Res5_Reprod.jpeg",
+ #    width = 18, height = 13, units = "cm", pointsize = 12,
+  #   quality = 100, res=300)
 par(mfrow=c(1,1), mar=c(4,6,1,1), oma=c(0,0,0,0))
 x1<-barplot(repMat, beside=TRUE, horiz=T, yaxt="n", col=heat.colors(10)[c(3:7)])
 mtext(side=2, line=2.5, at=colMeans(x1), text = colnames(repMat), cex=1.25,las=3)
@@ -709,9 +713,9 @@ aliL <- table(BioAnual23$GR[BioAnual23$Zona=="Lacustre"])
 aliMat<-t(as.matrix(rbind(aliL,aliT,aliF,aliG)))
 colnames(aliMat) <- c("Lacustre", "Transição", "Fluvial", "Geral")
 round(decostand(aliMat, method="total", MARGIN = 2)*100,2)
-jpeg(filename = "Res6_Aliment.jpeg",
-     width = 18, height = 13, units = "cm", pointsize = 12,
-     quality = 100, res=300)
+#jpeg(filename = "Res6_Aliment.jpeg",
+ #    width = 18, height = 13, units = "cm", pointsize = 12,
+  #   quality = 100, res=300)
 par(mfrow=c(1,1), mar=c(4,6,1,1), oma=c(0,0,0,0))
 x1<-barplot(aliMat, beside=TRUE, horiz=T, yaxt="n", col=terrain.colors(10)[c(4:1)])
 mtext(side=2, line=2, at=colMeans(x1), text = colnames(aliMat), cex=1.25,las=3)
