@@ -6,6 +6,7 @@ library(vegan)
 library(tidyr)
 library(dplyr)
 library(ggplot2)
+library(openxlsx)
 BioAnual23 <- data.frame(read_xlsx("BiopescaAnual23.xlsx", sheet="Biopesca"))
 Ord <- levels(factor(BioAnual23$Ordem))
 Fam <- levels(factor(BioAnual23$Familia))
@@ -97,7 +98,7 @@ ggplot(PescadoresMes_long, aes(x = Month, y = Value, color = Zona, group = Zona)
     legend.text = element_text(size = 20),   # Increase legend text size
     legend.title = element_text(size = 22),   # Increase legend title size
     legend.position = "right",  # Position of legend
-    legend.justification = "bottom") +
+    legend.justification = "bottom")
   scale_y_continuous(breaks = seq(0, ceiling(max(PescadoresMes_long$Value)), by = 5), limits = c(1, 40))
 
 # CPUE em Número ####
@@ -659,9 +660,10 @@ mtext("Frequência (Número de indivíduos)", side=2, line=3, outer=T, cex=1.25)
 dev.off()
 
 # Peso Comprimento, max e min ####
-TabParametros <- matrix(NA, nrow=length(Spp), ncol=11)
-colnames(TabParametros) <- c("CP.min", "CP.max", "WT.min", "WT.max","a","b","% fêmeas","% machos", "% sem informações repro.","% jovens","% adultos")
+TabParametros <- matrix(NA, nrow=length(Spp), ncol=10)
+colnames(TabParametros) <- c("CP.min", "CP.max", "WT.min", "WT.max","a","b","% fêmeas","% machos", "% jovens","% adultos")
 rownames(TabParametros) <- Spp
+i=1
 for(i in 1:length(Spp)){
   TabParametros[i,1:2] <- range(BioAnual23$CP[BioAnual23$Genero==Spp[i]], na.rm=TRUE)
   TabParametros[i,3:4] <- range(BioAnual23$Peso.total..g.[BioAnual23$Genero==Spp[i]], na.rm=TRUE)
@@ -672,19 +674,22 @@ for(i in 1:length(Spp)){
     TabParametros[i,5] <- round(10^WT_LT$coefficients[1],4)
     TabParametros[i,6] <- round(WT_LT$coefficients[2],4)
   }
-  gender_counts <- BioAnual23$Sexo[BioAnual23$Genero==Spp[i]]
-  TabParametros[i,7] <- (sum(gender_counts == "F", na.rm = TRUE) / length(gender_counts))*100
-  TabParametros[i,8] <- (sum(gender_counts == "M", na.rm = TRUE) / length(gender_counts))*100
-  TabParametros[i,9] <- (sum(is.na(gender_counts)) / length(gender_counts))*100
+  gender_counts <- BioAnual23$Sexo[BioAnual23$Genero==Spp[i]] #Tirar NA
+  gender_counts<- na.omit(gender_counts)
+  TabParametros[i,7] <- (sum(gender_counts == "F", na.rm = TRUE) / length(gender_counts))*100 #tirar NA
+  TabParametros[i,8] <- (sum(gender_counts == "M", na.rm = TRUE) / length(gender_counts))*100 # tirar NA
   maturidade <- BioAnual23$Estagio[BioAnual23$Genero==Spp[i]]
-  TabParametros[i,10]<-(sum(maturidade == "IMT", na.rm = TRUE) / length(maturidade))*100
+  TabParametros[i,9]<-(sum(maturidade == "IMT", na.rm = TRUE) / length(maturidade))*100
   count<- maturidade[maturidade  != "IMT"]
-  TabParametros[i,11]<-(length(count)/ length(maturidade))*100
+  TabParametros[i,10]<-(length(count)/ length(maturidade))*100
 }
 TabParametros
 TabParametros[!is.finite(TabParametros)] <- NA
-library(openxlsx)
-write.xlsx(TabParametros, file = "Parâmetros espécies.xlsx")
+# Define the file path where you want to save the Excel file
+file_path <- "C:/Users/lg_ri/Dropbox/Postdoc/UNIOESTE/Relatórios Itaipu/R/Parâmetros espécies.xlsx"  # Specify your desired file path and name
+TabParametros<-as.data.frame(TabParametros)
+# Save the dataframe to an Excel file
+write.xlsx(TabParametros, file_path, rowNames = TRUE)
 
 # Reprodução #####
 repG <- table(BioAnual23$Estagio)[c(2,3,5,1,4)]
@@ -707,7 +712,7 @@ dev.off()
 
 # Create a copy of the original data frame
 new_data <- BioAnual23
-
+i<-1
 # Convert 'Data' column to Date type
 new_data$Data <- as.Date(new_data$Data)
 
@@ -725,6 +730,7 @@ generos <- unique(filtered_data$Genero)
 # Initialize an empty list to store results
 result_list <- list()
 
+
 # Loop through each Genero
 for (gen in generos) {
   # Subset data for the current Genero
@@ -734,29 +740,29 @@ for (gen in generos) {
   months <- unique(gen_data$Month)
   
   # Initialize vectors to store counts and proportions
-  IMT_counts <- numeric(length(months))
-  not_IMT_counts <- numeric(length(months))
+  RPD_counts <- length(months)
+  not_RPD_counts <- length(months)
   
   # Loop through each month
   for (i in seq_along(months)) {
     # Subset data for the current month
     month_data <- gen_data[gen_data$Month == months[i], ]
     
-    # Count occurrences of IMT and NOT IMT
-    IMT_counts[i] <- sum(month_data$Estagio == "IMT", na.rm = TRUE)
-    not_IMT_counts[i] <- sum(month_data$Estagio != "IMT", na.rm = TRUE)
+    # Count occurrences of RPD and NOT RPD
+    RPD_counts[i] <- sum(month_data$Estagio == "RPD", na.rm = TRUE)
+    not_RPD_counts[i] <- sum(month_data$Estagio != "RPD" & month_data$Estagio !="IMT", na.rm = TRUE)
   }
-  
+
   # Calculate proportions
-  total_counts <- IMT_counts + not_IMT_counts
-  IMT_proportions <- IMT_counts / total_counts
-  not_IMT_proportions <- not_IMT_counts / total_counts
+  total_counts <- RPD_counts + not_RPD_counts
+  RPD_proportions <- RPD_counts / total_counts
+  not_RPD_proportions <- not_RPD_counts / total_counts
   
   # Store results in a data frame
   result_df <- data.frame(Genero = gen,
                           Month = months,
-                          IMT_prop = IMT_proportions,
-                          not_IMT_prop = not_IMT_proportions)
+                          RPD_prop = RPD_proportions,
+                          not_RPD_prop = not_RPD_proportions)
   
   # Append results to the list
   result_list[[gen]] <- result_df
@@ -775,6 +781,9 @@ maduros_prop <- matrix(NA, nrow=length(unique_generos), ncol=8)
 colnames(maduros_prop) <- c("Jun", "Jul", "Aug", "Sep","Oct","May","Apr","Mar")
 rownames(maduros_prop) <- unique_generos
 
+#fazer só pra RPD / IMT
+
+
 # Loop through each Genero
 for (i in seq_along(unique_generos)) {
   genero <- unique_generos[i]
@@ -785,7 +794,7 @@ for (i in seq_along(unique_generos)) {
   # Identify matching columns between maduros_prop[i,] and genero_data
   matching_cols <- intersect(colnames(maduros_prop), genero_data$Month)
 
-  maduros_prop[i, matching_cols] <- genero_data[match(matching_cols, genero_data$Month), "not_IMT_prop"]
+  maduros_prop[i, matching_cols] <- genero_data[match(matching_cols, genero_data$Month), "RPD_prop"]
 }
 
 column_order2 <- c("Mar", "Apr", "May", "Jun", "Jul","Aug","Sep","Oct")
@@ -793,9 +802,16 @@ column_order2 <- c("Mar", "Apr", "May", "Jun", "Jul","Aug","Sep","Oct")
 # Reorganize columns based on the list
 maduros_prop <- maduros_prop[, column_order2]
 
+maduros_prop[is.nan(maduros_prop)] <- NA
+
 colnames(maduros_prop) <- c("Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out")
 
-write.xlsx(maduros_prop, file = "Parâmetros espécies proporção de maduros por mês excluindo NA.xlsx")
+# Define the file path where you want to save the Excel file
+file_path <- "C:/Users/lg_ri/Dropbox/Postdoc/UNIOESTE/Relatórios Itaipu/R/Proporção de maduros por mês.xlsx"  # Specify your desired file path and name
+maduros_prop<-as.data.frame(maduros_prop)
+maduros_prop <- maduros_prop[order(rownames(maduros_prop)), ]
+# Save the dataframe to an Excel file
+write.xlsx(maduros_prop, file = "Proporção de maduros por mês.xlsx", rowNames = T)
 
 # Alimentação #####
 aliG <- table(BioAnual23$GR)
