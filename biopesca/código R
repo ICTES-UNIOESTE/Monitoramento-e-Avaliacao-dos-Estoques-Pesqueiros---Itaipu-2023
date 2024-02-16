@@ -43,7 +43,7 @@ rownames(PescadoresMes)[4]<- "Geral"
 PescadoresMes # DADOS PARA FIGURA DO ESFORÇO
 ##############
 
-column_order <- c("mar 2023", "abr 2023", "mai 2023", "jun 2023", "jul 2023","ago 2023","set 2023","out 2023")
+column_order <- c("Mar 2023", "Apr 2023", "May 2023", "Jun 2023", "Jul 2023","Aug 2023","Sep 2023","Oct 2023")
 
 # Reorganize columns based on the list
 PescadoresMes <- PescadoresMes %>%
@@ -574,11 +574,6 @@ pcoa_result <- capscale(hellinger_transformed ~ 1, distance = "bray")
 ## First 16 sites grazed, remaining 8 sites ungrazed
 groups <- factor(c(rep(1,4), rep(5,16), rep(21,4)), labels = c("Fluvial","Lacustre","Transição"))
 
-#indval por zonas
-library(labdsv)
-indval_result <- indval(nCPUEPonto, groups)
-summary(indval_result)
-
 # 4. Analyze multivariate homogeneity of group dispersions
 dispersions <- betadisper(bray_curtis_dist, groups)
 permutest(dispersions)
@@ -587,7 +582,7 @@ labs <- paste("PCoA", 1:4, "(",
               round(100*dispersions$eig / sum(dispersions$eig), 2), "%)")
 
 plot(dispersions, cex=1.3, pch=15:17,
-     main="CPUE de cada espécie nas zonas (PERMANOVA p = 0.129)", cex.lab=1.25,
+     main="Composição de espécies nas zonas por pontos (PERMANOVA p = 0.129)", cex.lab=1.25,
      xlab=labs[1], ylab=labs[2],
      hull=FALSE, ellipse=TRUE, lwd=2)
 
@@ -635,30 +630,28 @@ labs <- paste("PCoA", 1:4, "(",
               round(100*dispersions$eig / sum(dispersions$eig), 2), "%)")
 
 plot(dispersions2, cex=1.3, pch=15:17,
-     main="CPUE de cada espécie nos meses (PERMANOVA p = 0.109)", cex.lab=1.25,
+     main="Composição de espécies nos meses  por pontos (PERMANOVA p = 0.119)", cex.lab=1.25,
      xlab=labs[1], ylab=labs[2],
      hull=FALSE, ellipse=TRUE, lwd=2)
-
-#Parei aqui
 
 # Distribuição de tamanho #####
 min(BioAnual23$CP, na.rm=TRUE);max(BioAnual23$CP, na.rm=TRUE);mean(BioAnual23$CP, na.rm=TRUE)
 #jpeg(filename = "Res4_Tamanhos.jpeg",
- #    width = 18, height = 13, units = "cm", pointsize = 12,
-  #   quality = 100, res=300)
+#     width = 18, height = 13, units = "cm", pointsize = 12,
+#     quality = 100, res=300)
 par(mfrow=c(4,1), mar=c(1,0,1,0), oma=c(4,6,1,0))
-hist(BioAnual23$CP, main="", col = "white", xaxt="n")
+x<-hist(BioAnual23$CP, main="", col = "yellow1", xaxt="n")
 range(BioAnual23$CP, na.rm=TRUE)
 mean(BioAnual23$CP, na.rm=TRUE)
 mtext("Geral", side=3, line=0, outer=F, cex=1.25)
 abline(v=mean(BioAnual23$CP, na.rm=T), col="black",lty=1, lwd=3)
-hist(BioAnual23$CP[BioAnual23$Zona=="Fluvial"], main="",col = "#045e9a", breaks=x$breaks, xaxt="n")
+hist(BioAnual23$CP[BioAnual23$Zona=="Fluvial"], main="",col = "deepskyblue", breaks=x$breaks, xaxt="n")
 mtext("Fluvial", side=3, line=0, outer=F, cex=1.25)
 abline(v=mean(BioAnual23$CP[BioAnual23$Zona=="Fluvial"], na.rm=T), col="black",lty=1, lwd=3)
-hist(BioAnual23$CP[BioAnual23$Zona=="Transição"], main="",col = "#da2420", breaks=x$breaks, xaxt="n")
+hist(BioAnual23$CP[BioAnual23$Zona=="Transição"], main="",col = "red", breaks=x$breaks, xaxt="n")
 mtext("Transição", side=3, line=0, outer=F, cex=1.25)
 abline(v=mean(BioAnual23$CP[BioAnual23$Zona=="Transição"], na.rm=T), col="black",lty=1, lwd=3)
-hist(BioAnual23$CP[BioAnual23$Zona=="Lacustre"], main="",col = "#009241", xlab=, breaks=x$breaks)
+hist(BioAnual23$CP[BioAnual23$Zona=="Lacustre"], main="",col = "chartreuse3", xlab=, breaks=x$breaks)
 abline(v=mean(BioAnual23$CP[BioAnual23$Zona=="Lacustre"], na.rm=T), col="black",lty=1, lwd=3)
 mtext("Lacustre", side=3, line=0, outer=F, cex=1.25)
 mtext("Comprimento Padrão (cm)", side=1, line=2, outer=T, cex=1.25)
@@ -666,10 +659,9 @@ mtext("Frequência (Número de indivíduos)", side=2, line=3, outer=T, cex=1.25)
 dev.off()
 
 # Peso Comprimento, max e min ####
-TabParametros <- matrix(NA, nrow=length(Spp), ncol=6)
-colnames(TabParametros) <- c("CP.min", "CP.max", "WT.min", "WT.max","a","b")
+TabParametros <- matrix(NA, nrow=length(Spp), ncol=11)
+colnames(TabParametros) <- c("CP.min", "CP.max", "WT.min", "WT.max","a","b","% fêmeas","% machos", "% sem informações repro.","% jovens","% adultos")
 rownames(TabParametros) <- Spp
-i=1
 for(i in 1:length(Spp)){
   TabParametros[i,1:2] <- range(BioAnual23$CP[BioAnual23$Genero==Spp[i]], na.rm=TRUE)
   TabParametros[i,3:4] <- range(BioAnual23$Peso.total..g.[BioAnual23$Genero==Spp[i]], na.rm=TRUE)
@@ -680,11 +672,19 @@ for(i in 1:length(Spp)){
     TabParametros[i,5] <- round(10^WT_LT$coefficients[1],4)
     TabParametros[i,6] <- round(WT_LT$coefficients[2],4)
   }
+  gender_counts <- BioAnual23$Sexo[BioAnual23$Genero==Spp[i]]
+  TabParametros[i,7] <- (sum(gender_counts == "F", na.rm = TRUE) / length(gender_counts))*100
+  TabParametros[i,8] <- (sum(gender_counts == "M", na.rm = TRUE) / length(gender_counts))*100
+  TabParametros[i,9] <- (sum(is.na(gender_counts)) / length(gender_counts))*100
+  maturidade <- BioAnual23$Estagio[BioAnual23$Genero==Spp[i]]
+  TabParametros[i,10]<-(sum(maturidade == "IMT", na.rm = TRUE) / length(maturidade))*100
+  count<- maturidade[maturidade  != "IMT"]
+  TabParametros[i,11]<-(length(count)/ length(maturidade))*100
 }
 TabParametros
-TabParametros[is.infinite(TabParametros)] <- NA
-library(xlsx)
-write.xlsx(TabParametros, file = "TabParametros.xlsx")
+TabParametros[!is.finite(TabParametros)] <- NA
+library(openxlsx)
+write.xlsx(TabParametros, file = "Parâmetros espécies.xlsx")
 
 # Reprodução #####
 repG <- table(BioAnual23$Estagio)[c(2,3,5,1,4)]
@@ -705,17 +705,110 @@ axis(side=2, at=x1, labels=rep(rownames(repMat),4), cex.axis=0.75,las=2)
 mtext("Frequência (Número de indivíduos)", side=1, line=3, cex=1.25)
 dev.off()
 
+# Create a copy of the original data frame
+new_data <- BioAnual23
+
+# Convert 'Data' column to Date type
+new_data$Data <- as.Date(new_data$Data)
+
+new_data$Month <- format(new_data$Data, "%b")
+
+# Define a vector of month names
+months <- c("Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out")
+
+# Filter data for rows where Estagio is not NA
+filtered_data <- new_data[!is.na(new_data$Estagio), ]
+
+# Get unique Genero values
+generos <- unique(filtered_data$Genero)
+
+# Initialize an empty list to store results
+result_list <- list()
+
+# Loop through each Genero
+for (gen in generos) {
+  # Subset data for the current Genero
+  gen_data <- filtered_data[filtered_data$Genero == gen, ]
+  
+  # Get unique month values for the current Genero
+  months <- unique(gen_data$Month)
+  
+  # Initialize vectors to store counts and proportions
+  IMT_counts <- numeric(length(months))
+  not_IMT_counts <- numeric(length(months))
+  
+  # Loop through each month
+  for (i in seq_along(months)) {
+    # Subset data for the current month
+    month_data <- gen_data[gen_data$Month == months[i], ]
+    
+    # Count occurrences of IMT and NOT IMT
+    IMT_counts[i] <- sum(month_data$Estagio == "IMT", na.rm = TRUE)
+    not_IMT_counts[i] <- sum(month_data$Estagio != "IMT", na.rm = TRUE)
+  }
+  
+  # Calculate proportions
+  total_counts <- IMT_counts + not_IMT_counts
+  IMT_proportions <- IMT_counts / total_counts
+  not_IMT_proportions <- not_IMT_counts / total_counts
+  
+  # Store results in a data frame
+  result_df <- data.frame(Genero = gen,
+                          Month = months,
+                          IMT_prop = IMT_proportions,
+                          not_IMT_prop = not_IMT_proportions)
+  
+  # Append results to the list
+  result_list[[gen]] <- result_df
+}
+
+# Combine results from all Generos into a single data frame
+proportions_df <- do.call(rbind, result_list)
+
+# Print the new table
+print(proportions_df)
+
+# Extract unique Genero values
+unique_generos <- unique(proportions_df$Genero)
+
+maduros_prop <- matrix(NA, nrow=length(unique_generos), ncol=8)
+colnames(maduros_prop) <- c("Jun", "Jul", "Aug", "Sep","Oct","May","Apr","Mar")
+rownames(maduros_prop) <- unique_generos
+
+# Loop through each Genero
+for (i in seq_along(unique_generos)) {
+  genero <- unique_generos[i]
+  
+  # Subset data for the current Genero
+  genero_data <- proportions_df[proportions_df$Genero == genero, ]
+  
+  # Identify matching columns between maduros_prop[i,] and genero_data
+  matching_cols <- intersect(colnames(maduros_prop), genero_data$Month)
+
+  maduros_prop[i, matching_cols] <- genero_data[match(matching_cols, genero_data$Month), "not_IMT_prop"]
+}
+
+column_order2 <- c("Mar", "Apr", "May", "Jun", "Jul","Aug","Sep","Oct")
+
+# Reorganize columns based on the list
+maduros_prop <- maduros_prop[, column_order2]
+
+colnames(maduros_prop) <- c("Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out")
+
+write.xlsx(maduros_prop, file = "Parâmetros espécies proporção de maduros por mês excluindo NA.xlsx")
+
 # Alimentação #####
 aliG <- table(BioAnual23$GR)
 aliF <- table(BioAnual23$GR[BioAnual23$Zona=="Fluvial"])
 aliT <- table(BioAnual23$GR[BioAnual23$Zona=="Transição"])
 aliL <- table(BioAnual23$GR[BioAnual23$Zona=="Lacustre"])
 aliMat<-t(as.matrix(rbind(aliL,aliT,aliF,aliG)))
+aliMat<-aliMat[-5,]
 colnames(aliMat) <- c("Lacustre", "Transição", "Fluvial", "Geral")
 round(decostand(aliMat, method="total", MARGIN = 2)*100,2)
 #jpeg(filename = "Res6_Aliment.jpeg",
- #    width = 18, height = 13, units = "cm", pointsize = 12,
-  #   quality = 100, res=300)
+#     width = 18, height = 13, units = "cm", pointsize = 12,
+#     quality = 100, res=300)
 par(mfrow=c(1,1), mar=c(4,6,1,1), oma=c(0,0,0,0))
 x1<-barplot(aliMat, beside=TRUE, horiz=T, yaxt="n", col=terrain.colors(10)[c(4:1)])
 mtext(side=2, line=2, at=colMeans(x1), text = colnames(aliMat), cex=1.25,las=3)
