@@ -1,12 +1,11 @@
 # Biopesca março a outubro de 2023 ####
 rm()
-setwd("C:/Users/lg_ri/Dropbox/Postdoc/UNIOESTE/Relatórios Itaipu/R")
+setwd("C:/Users/lg_ri/Dropbox/Postdoc/UNIOESTE/Relatórios Itaipu/R biopesca")
 library(readxl)
 library(vegan)
 library(tidyr)
 library(dplyr)
 library(ggplot2)
-library(openxlsx)
 BioAnual23 <- data.frame(read_xlsx("BiopescaAnual23.xlsx", sheet="Biopesca"))
 Ord <- levels(factor(BioAnual23$Ordem))
 Fam <- levels(factor(BioAnual23$Familia))
@@ -98,7 +97,7 @@ ggplot(PescadoresMes_long, aes(x = Month, y = Value, color = Zona, group = Zona)
     legend.text = element_text(size = 20),   # Increase legend text size
     legend.title = element_text(size = 22),   # Increase legend title size
     legend.position = "right",  # Position of legend
-    legend.justification = "bottom")
+    legend.justification = "bottom") +
   scale_y_continuous(breaks = seq(0, ceiling(max(PescadoresMes_long$Value)), by = 5), limits = c(1, 40))
 
 # CPUE em Número ####
@@ -446,12 +445,32 @@ nZona <- aggregate(N ~ Zona+Espécie, data=BioAnual23, sum)
 nZonaTab <- as.data.frame.matrix(xtabs(N~.,data=nZona))
 nspp <- aggregate(N ~ Espécie, data=BioAnual23, sum)
 tnZonaTab<-t(nZonaTab)
-nCPUEZona <- tnZonaTab/nPescadorZona1Tab
-nPescadorZonaSpp <- aggregate(Seq ~ Pescador+Espécie+Zona, data=BioAnual23, length)
-nPescadorSpp <- aggregate(Seq ~ Espécie, data=nPescadorZonaSpp, length)
-nCPUEspp<-nspp$N/nPescadorSpp$Seq
-CPUE_spp <- cbind(nCPUEZona,nCPUEspp)
-colnames(CPUE_spp)[4] <- "Geral"
+
+# Esforço em número de pescadores
+nPescadorZona <- aggregate(Seq ~ Pescador+Zona, data=BioAnual23, length)
+nPescadorZona1 <- aggregate(Seq ~ Zona, data=nPescadorZona, length)
+nPescadorZona1Tab <- as.data.frame.matrix(t(xtabs(Seq ~., data=nPescadorZona1)))
+
+# Extract dimensions of the original data frame
+dimensions <- dim(tnZonaTab)
+num_rows <- dimensions[1]
+num_cols <- dimensions[2]
+
+# Create an empty data frame with the same dimensions
+nCPUEZona <- data.frame(matrix(nrow = num_rows, ncol = num_cols))
+i=1
+for(i in 1:nrow(tnZonaTab)){
+  nCPUEZona[i,] <- tnZonaTab[i,]/nPescadorZona1Tab
+}
+nomes_spp<-rownames(tnZonaTab)
+nCPUEZona$Geral <- rowSums(nCPUEZona)
+
+colnames(nCPUEZona)<-c("Fluvial","Lacustre","Transição","Geral")
+
+CPUE_spp<-nCPUEZona
+
+rownames(CPUE_spp)<-nomes_spp
+
 # Convert row names to an actual column
 CPUE_spp$Species <- rownames(CPUE_spp)
 # Remove row names
@@ -540,100 +559,93 @@ print(whitaker_plot_lacustre)
 
 #composição PCoA
 # CPUE em Número por zona####
-nPonto <- aggregate(N ~ Espécie+Ponto, data=BioAnual23, sum)
-nPontoTab <- as.data.frame.matrix(xtabs(N~.,data=nPonto))
-nspp <- aggregate(N ~ Espécie, data=BioAnual23, sum)
-tnPontoTab<-t(nPontoTab)
+nPonto <- aggregate(N ~ Espécie+Zona+Mes, data=BioAnual23, sum)
+
+library(tidyverse)
+
+nPonto_wide <- nPonto %>%
+  pivot_wider(names_from = Espécie, values_from = N, values_fill = 0)
+
+# Optionally, you can remove column names prefix and suffix
+colnames(nPonto_wide) <- gsub("N_", "", colnames(nPonto_wide))
+colnames(nPonto_wide) <- gsub(" ", "_", colnames(nPonto_wide))
+
+# Optionally, you can reorder columns
+nPonto_wide <- nPonto_wide %>%
+  select(Zona, Mes, everything())
+
+nPonto<-as.data.frame(nPonto_wide)
 
 # Esforço em número de pescadores
-nPescadorPonto <- aggregate(Seq ~ Pescador+Ponto+Espécie, data=BioAnual23, length)
-nPescadorPonto1 <- aggregate(Seq ~ Ponto+Espécie, data=nPescadorPonto, length)
-nPescadorPonto1Tab <- as.data.frame.matrix(t(xtabs(Seq ~., data=nPescadorPonto1)))
+nPescadorPonto <- aggregate(Seq ~ Zona+Pescador+Mes, data=BioAnual23, length)
+nPescadorPonto1 <- aggregate(Seq ~ +Zona+Mes, data=nPescadorPonto, length)
 
-tnPescadorPonto1Tab<-t(nPescadorPonto1Tab)
 
-nCPUEPonto <- tnPontoTab/tnPescadorPonto1Tab
+# Calculate the division
+result <- nPonto %>%
+  mutate_at(vars(-c(Zona, Mes)), ~ . / nPescadorPonto1$Seq)
 
-nCPUEPonto[is.nan(nCPUEPonto)] <- 0
+# Calculate row sums
+row_sums <- rowSums(is.na(result) | result == 0, na.rm = TRUE)
 
-rownames(nCPUEPonto) <- c("Lacustre 1","Lacustre 2","Lacustre 3","Lacustre 4","Lacustre 5","Lacustre 6","Lacustre 7",
-                          "Lacustre 8","Lacustre 9","Lacustre 10","Lacustre 11","Lacustre 12","Lacustre 13",
-                          "Lacustre 14","Transição 1","Transição 2","Lacustre 15","Transição 3","Fluvial 1",
-                          "Lacustre 16","Fluvial 2","Fluvial 3","Transição 4","Fluvial 4")
-nCPUEPonto <- nCPUEPonto[order(rownames(nCPUEPonto)), ]
+# Subset data frame to rows where row sum is not equal to the number of columns
+result <- result[row_sums != ncol(result), ]
 
-# 1. Calculate Bray-Curtis dissimilarities
-bray_curtis_dist <- vegdist(nCPUEPonto, method = "bray")
+result_partial<-result[,-1]
+result_partial<-result_partial[,-1]
 
 # 2. Apply Hellinger transformation
-hellinger_transformed <- decostand(nCPUEPonto, "hellinger")
+hellinger_transformed <- decostand(result_partial, "hellinger")
+
+# Convert each element of the list to numeric
+for (i in seq_along(hellinger_transformed)) {
+  hellinger_transformed[[i]] <- as.numeric(unlist(hellinger_transformed[[i]]))
+}
+
+# Combine the list elements into a single numeric matrix or data frame
+numeric_data <- do.call(cbind, hellinger_transformed)
+
+# Convert the numeric matrix or data frame to a proper format
+numeric_data <- as.data.frame(numeric_data)
+
+# Now you can calculate the distance matrix
+dist_hellinger_transformed <- vegdist(numeric_data, method = "bray")
 
 # 3. Perform PCoA using transformed data
-library(vegan)
-pcoa_result <- capscale(hellinger_transformed ~ 1, distance = "bray")
+library(ecodist)
+pcoa_result <-  pco(dist_hellinger_transformed)
 
-## First 16 sites grazed, remaining 8 sites ungrazed
-groups <- factor(c(rep(1,4), rep(5,16), rep(21,4)), labels = c("Fluvial","Lacustre","Transição"))
+pcoa_result_vectors<-pcoa_result$vectors[,1:2]
+# Perform PERMANOVA
+permanova_result <- adonis2(dist_hellinger_transformed ~ Zona + Mes, data = result, permutations = 999)
+
+# View the PERMANOVA results
+print(permanova_result)
+
+groups<-result[,1]
 
 # 4. Analyze multivariate homogeneity of group dispersions
-dispersions <- betadisper(bray_curtis_dist, groups)
+dispersions <- betadisper(dist_hellinger_transformed, groups)
 permutest(dispersions)
 # Plot betadisper results
 labs <- paste("PCoA", 1:4, "(", 
               round(100*dispersions$eig / sum(dispersions$eig), 2), "%)")
 
-plot(dispersions, cex=1.3, pch=15:17,
-     main="Composição de espécies nas zonas por pontos (PERMANOVA p = 0.129)", cex.lab=1.25,
-     xlab=labs[1], ylab=labs[2],
-     hull=FALSE, ellipse=TRUE, lwd=2)
+plot(dispersions, cex = 1.3, pch = 15:17,
+     main = "Composição de espécies nas zonas por meses", cex.lab = 1.25,
+     xlab = labs[1], ylab = labs[2],
+     hull = FALSE, ellipse = TRUE, lwd = 2)
 
-# CPUE em Número por Mês####
-nMes <- aggregate(N ~ Espécie+Data, data=BioAnual23, sum)
-nMesTab <- as.data.frame.matrix(xtabs(N~.,data=nMes))
-nspp <- aggregate(N ~ Espécie, data=BioAnual23, sum)
-tnMesTab<-t(nMesTab)
+title(sub = "F (zonas/meses) = 3,31 e 1,8 (g.l. 2 e 7); p = 0,001 e 0,002  ", line = -1, cex.main = 1, cex.sub = 1, adj=1)
 
-# Esforço em número de pescadores
-nPescadorMes <- aggregate(Seq ~ Pescador+Data+Espécie, data=BioAnual23, length)
-nPescadorMes1 <- aggregate(Seq ~ Data+Espécie, data=nPescadorMes, length)
-nPescadorMes1Tab <- as.data.frame.matrix(t(xtabs(Seq ~., data=nPescadorMes1)))
+#indval
+# Perform IndVal analysis
+library(labdsv)
+indval_result <- indval(hellinger_transformed, groups)
 
-tnPescadorMes1Tab<-t(nPescadorMes1Tab)
+# Print the IndVal results
+summary(indval_result)
 
-nCPUEMes <- tnMesTab/tnPescadorMes1Tab
-
-nCPUEMes[is.nan(nCPUEMes)] <- 0
-
-rownames(nCPUEMes) <- c("Março 1","Março 2","Março 3","Março 4","Abril 1","Abril 2","Abril 3","Abril 4","Abril 5","Abril 6","Abril 7","Maio 1",
-                        "Maio 2","Maio 3","Maio 4","Maio 5","Maio 6","Maio 7","Maio 8","Junho 1","Junho 2","Junho 3","Junho 4","Junho 5",
-                        "Julho 1","Julho 2","Julho 3","Julho 4","Julho 5","Agosto 1","Agosto 2","Agosto 3","Agosto 4","Agosto 5","Agosto 6",
-                        "Agosto 7","Setembro 1","Setembro 2","Setembro 3","Setembro 4","Setembro 5","Setembro 6","Outubro 1",
-                        "Outubro 2","Outubro 3","Outubro 4","Outubro 5","Outubro 6","Outubro 7")
-nCPUEMes[!is.finite(nCPUEMes)] <- 0
-# 1. Calculate Bray-Curtis dissimilarities
-bray_curtis_dist2 <- vegdist(nCPUEMes, method = "bray")
-
-# 2. Apply Hellinger transformation
-hellinger_transformed2 <- decostand(nCPUEMes, "hellinger")
-
-# 3. Perform PCoA using transformed data
-library(vegan)
-pcoa_result <- capscale(hellinger_transformed2 ~ 1, distance = "bray")
-
-## First 16 sites grazed, remaining 8 sites ungrazed
-groups2 <- factor(c(rep(1,4), rep(5,7), rep(11,8), rep(20,5), rep(25,5), rep(30,7), rep(38,6), rep(45,7)), labels = c("Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro"))
-
-# 4. Analyze multivariate homogeneity of group dispersions
-dispersions2 <- betadisper(bray_curtis_dist2, groups2)
-permutest(dispersions2)
-# Plot betadisper results
-labs <- paste("PCoA", 1:4, "(", 
-              round(100*dispersions$eig / sum(dispersions$eig), 2), "%)")
-
-plot(dispersions2, cex=1.3, pch=15:17,
-     main="Composição de espécies nos meses  por pontos (PERMANOVA p = 0.119)", cex.lab=1.25,
-     xlab=labs[1], ylab=labs[2],
-     hull=FALSE, ellipse=TRUE, lwd=2)
 
 # Distribuição de tamanho #####
 min(BioAnual23$CP, na.rm=TRUE);max(BioAnual23$CP, na.rm=TRUE);mean(BioAnual23$CP, na.rm=TRUE)
@@ -660,33 +672,49 @@ mtext("Frequência (Número de indivíduos)", side=2, line=3, outer=T, cex=1.25)
 dev.off()
 
 # Peso Comprimento, max e min ####
-TabParametros <- matrix(NA, nrow=length(Spp), ncol=10)
-colnames(TabParametros) <- c("CP.min", "CP.max", "WT.min", "WT.max","a","b","% fêmeas","% machos", "% jovens","% adultos")
+TabParametros <- matrix(NA, nrow=length(Spp), ncol=12)
+colnames(TabParametros) <- c("CP.min", "CP.max", "WT.min", "WT.max","a","b","2,5%","97,5%","% fêmeas","% machos", "% jovens","% adultos")
 rownames(TabParametros) <- Spp
 i=1
 for(i in 1:length(Spp)){
-  TabParametros[i,1:2] <- range(BioAnual23$CP[BioAnual23$Genero==Spp[i]], na.rm=TRUE)
-  TabParametros[i,3:4] <- range(BioAnual23$Peso.total..g.[BioAnual23$Genero==Spp[i]], na.rm=TRUE)
-  x <- BioAnual23$CP[BioAnual23$Genero==Spp[i]]
-  y <- BioAnual23$Peso.total..g.[BioAnual23$Genero==Spp[i]]
-  if(length(y)>20){
-    WT_LT <- lm(log10(y)~log10(x))
-    TabParametros[i,5] <- round(10^WT_LT$coefficients[1],4)
-    TabParametros[i,6] <- round(WT_LT$coefficients[2],4)
-  }
-  gender_counts <- BioAnual23$Sexo[BioAnual23$Genero==Spp[i]] #Tirar NA
-  gender_counts<- na.omit(gender_counts)
-  TabParametros[i,7] <- (sum(gender_counts == "F", na.rm = TRUE) / length(gender_counts))*100 #tirar NA
-  TabParametros[i,8] <- (sum(gender_counts == "M", na.rm = TRUE) / length(gender_counts))*100 # tirar NA
-  maturidade <- BioAnual23$Estagio[BioAnual23$Genero==Spp[i]]
-  TabParametros[i,9]<-(sum(maturidade == "IMT", na.rm = TRUE) / length(maturidade))*100
-  count<- maturidade[maturidade  != "IMT"]
-  TabParametros[i,10]<-(length(count)/ length(maturidade))*100
+  tryCatch({
+    TabParametros[i, 1:2] <- range(BioAnual23$CP[BioAnual23$Genero == Spp[i]], na.rm = TRUE)
+    TabParametros[i, 3:4] <- range(BioAnual23$Peso.total..g.[BioAnual23$Genero == Spp[i]], na.rm = TRUE)
+    
+    x <- BioAnual23$CP[BioAnual23$Genero == Spp[i]]
+    y <- BioAnual23$Peso.total..g.[BioAnual23$Genero == Spp[i]]
+    
+    if(length(y) > 20){
+      WT_LT <- lm(log10(y) ~ log10(x))
+      TabParametros[i, 5] <- round(10^WT_LT$coefficients[1], 4)
+      TabParametros[i, 6] <- round(WT_LT$coefficients[2], 4)
+      Resumo=summary(WT_LT)
+      EP=Resumo$coefficients[2,2]
+      parametros=cbind(Resumo$coefficients[,1],confint(WT_LT))
+      TabParametros[i, 7] <- parametros[2,2]
+      TabParametros[i, 8] <- parametros[2,3]
+      }
+    
+    gender_counts <- BioAnual23$Sexo[BioAnual23$Genero == Spp[i]]
+    gender_counts <- na.omit(gender_counts)
+    TabParametros[i, 9] <- (sum(gender_counts == "F", na.rm = TRUE) / length(gender_counts)) * 100
+    TabParametros[i, 10] <- (sum(gender_counts == "M", na.rm = TRUE) / length(gender_counts)) * 100
+    
+    maturidade <- BioAnual23$Estagio[BioAnual23$Genero == Spp[i]]
+    TabParametros[i, 11] <- (sum(maturidade == "IMT", na.rm = TRUE) / length(maturidade)) * 100
+    
+    count <- maturidade[maturidade != "IMT"]
+    TabParametros[i, 12] <- (length(count) / length(maturidade)) * 100
+  }, error = function(e) {
+    cat("Error occurred for species:", Spp[i], "\n")
+    TabParametros[i, ] <- NA
+  })
 }
+
 TabParametros
 TabParametros[!is.finite(TabParametros)] <- NA
 # Define the file path where you want to save the Excel file
-file_path <- "C:/Users/lg_ri/Dropbox/Postdoc/UNIOESTE/Relatórios Itaipu/R/Parâmetros espécies.xlsx"  # Specify your desired file path and name
+file_path <- "C:/Users/lg_ri/Dropbox/Postdoc/UNIOESTE/Relatórios Itaipu/R biopesca/Parâmetros espécies.xlsx"  # Specify your desired file path and name
 TabParametros<-as.data.frame(TabParametros)
 # Save the dataframe to an Excel file
 write.xlsx(TabParametros, file_path, rowNames = TRUE)
