@@ -1,0 +1,703 @@
+# Biopesca março a outubro de 2023 ####
+rm()
+setwd("C:/Users/lg_ri/Dropbox/Postdoc/UNIOESTE/Relatórios Itaipu/R socioeconomico")
+library(readxl)
+library(vegan)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(openxlsx)
+library(ggrepel)
+
+socio_geral <- data.frame(read_xlsx("Cadastro_Socioeconomico_dos_Pescadores_2023.xlsx", sheet="0"))
+socio_geral$Data.do.registro <-as.Date(socio_geral$Data.do.registro, format = "%y/%m/%d") # Data em (mmm aaaa)
+socio_geral <- subset(socio_geral, format(Data.do.registro, "%Y") == "2023")
+socio_geral$Data.de.nascimento <-as.Date(socio_geral$Data.de.nascimento, format = "%d/%m/%Y") # Data em (mmm aaaa)
+socio_geral$Seq <- seq(nrow(socio_geral))
+
+#pescadores por zona
+npescadorzona <- aggregate(Seq ~ Nome.Completo+Zona.de.Pesca, data=socio_geral, length)
+npescadorzona1 <- aggregate(Seq ~ Zona.de.Pesca, data=npescadorzona, length)
+
+color <- c("#045e9a", "#da2420","#009241")
+
+# Criar um fator com a ordem desejada
+ordem <- c("Fluvial", "Transição", "Lacustre")
+npescadorzona1$Zona.de.Pesca <- factor(npescadorzona1$Zona.de.Pesca, levels = ordem)
+
+# Ordenar os dados pela nova ordem
+npescadorzona1 <- npescadorzona1 %>% arrange(Zona.de.Pesca)
+
+# Barplot
+bp <- ggplot(npescadorzona1, aes(x = "", y = Seq, fill = Zona.de.Pesca)) +
+  geom_bar(width = 1, stat = "identity") +
+  scale_fill_manual(values = color, name = "Zona") +  # Renaming legend
+  labs(y = NULL)  # Removing y-axis label
+
+pie <- bp + coord_polar("y", start = 1)
+
+blank_theme <- theme_minimal() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    panel.border = element_blank(),
+    panel.grid = element_blank(),
+    axis.ticks = element_blank(),
+    plot.title = element_text(size = 15, face = "bold"),
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  )
+
+pie + blank_theme +
+  theme(axis.text.x = element_blank())+
+  labs(title="Pescadores por zonas",subtitle="Número total de registros de pescadores = 80")
+
+#pescadores por sexo
+npescadorsexo <- aggregate(Seq ~ Nome.Completo+Sexo, data=socio_geral, length)
+npescadorsexo1 <- aggregate(Seq ~ Sexo, data=npescadorsexo, length)
+
+color <- c("#045e9a", "#da2420","#009241")
+
+# Criar um fator com a ordem desejada
+ordem <- c("Masculino", "Feminino", "Não informado")
+npescadorsexo1$Sexo <- factor(npescadorsexo1$Sexo, levels = ordem)
+
+# Ordenar os dados pela nova ordem
+npescadorsexo1 <- npescadorsexo1 %>% arrange(Sexo)
+
+# Barplot
+bp <- ggplot(npescadorsexo1, aes(x = "", y = Seq, fill = Sexo)) +
+  geom_bar(width = 1, stat = "identity") +
+  scale_fill_manual(values = color, name = "Sexo") +  # Renaming legend
+  labs(y = NULL)  # Removing y-axis label
+
+pie <- bp + coord_polar("y", start = 1)
+
+blank_theme <- theme_minimal() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    panel.border = element_blank(),
+    panel.grid = element_blank(),
+    axis.ticks = element_blank(),
+    plot.title = element_text(size = 15, face = "bold"),
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  )
+
+pie + blank_theme +
+  theme(axis.text.x = element_blank())+
+  labs(title="Sexo dos pescadores",subtitle="Número total de pescadores = 80")
+
+#pescadores por sexo por zona
+npescadorsexo <- aggregate(Seq ~ Nome.Completo+Sexo+Zona.de.Pesca, data=socio_geral, length)
+npescadorsexo1 <- aggregate(Seq ~ Sexo+Zona.de.Pesca, data=npescadorsexo, length)
+
+color <- c("#045e9a", "#da2420","#009241")
+
+fluvial_df <- npescadorsexo1[npescadorsexo1$Zona.de.Pesca == "Fluvial", ]
+transicao_df <- npescadorsexo1[npescadorsexo1$Zona.de.Pesca == "Transição", ]
+lacustre_df <- npescadorsexo1[npescadorsexo1$Zona.de.Pesca == "Lacustre", ]
+
+# Criar um fator com a ordem desejada
+ordem <- c("Masculino", "Feminino")
+fluvial_df$Sexo <- factor(fluvial_df$Sexo, levels = ordem)
+
+# Ordenar os dados pela nova ordem
+fluvial_df <- fluvial_df %>% arrange(Sexo)
+
+# Barplot
+bp <- ggplot(fluvial_df, aes(x = "", y = Seq, fill = Sexo)) +
+  geom_bar(width = 1, stat = "identity") +
+  scale_fill_manual(values = color, name = "Sexo") +  # Renaming legend
+  labs(y = NULL)  # Removing y-axis label
+
+pie <- bp + coord_polar("y", start = 1)
+
+blank_theme <- theme_minimal() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    panel.border = element_blank(),
+    panel.grid = element_blank(),
+    axis.ticks = element_blank(),
+    plot.title = element_text(size = 15, face = "bold"),
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  )
+
+pie + blank_theme +
+  theme(axis.text.x = element_blank())+
+  labs(title="Sexo dos pescadores na zona fluvial",subtitle="Número total de pescadores = 8")
+
+# Criar um fator com a ordem desejada
+ordem <- c("Masculino", "Feminino", "Não informado")
+transicao_df$Sexo <- factor(transicao_df$Sexo, levels = ordem)
+
+# Ordenar os dados pela nova ordem
+transicao_df <- transicao_df %>% arrange(Sexo)
+
+# Barplot
+bp <- ggplot(transicao_df, aes(x = "", y = Seq, fill = Sexo)) +
+  geom_bar(width = 1, stat = "identity") +
+  scale_fill_manual(values = color, name = "Sexo") +  # Renaming legend
+  labs(y = NULL)  # Removing y-axis label
+
+pie <- bp + coord_polar("y", start = 1)
+
+blank_theme <- theme_minimal() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    panel.border = element_blank(),
+    panel.grid = element_blank(),
+    axis.ticks = element_blank(),
+    plot.title = element_text(size = 15, face = "bold"),
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  )
+
+pie + blank_theme +
+  theme(axis.text.x = element_blank())+
+  labs(title="Sexo dos pescadores na zona transição",subtitle="Número total de pescadores = 14")
+
+# Criar um fator com a ordem desejada
+ordem <- c("Masculino", "Feminino", "Não informado")
+lacustre_df$Sexo <- factor(lacustre_df$Sexo, levels = ordem)
+
+# Ordenar os dados pela nova ordem
+lacustre_df <- lacustre_df %>% arrange(Sexo)
+
+# Barplot
+bp <- ggplot(lacustre_df, aes(x = "", y = Seq, fill = Sexo)) +
+  geom_bar(width = 1, stat = "identity") +
+  scale_fill_manual(values = color, name = "Sexo") +  # Renaming legend
+  labs(y = NULL)  # Removing y-axis label
+
+pie <- bp + coord_polar("y", start = 1)
+
+blank_theme <- theme_minimal() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    panel.border = element_blank(),
+    panel.grid = element_blank(),
+    axis.ticks = element_blank(),
+    plot.title = element_text(size = 15, face = "bold"),
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  )
+
+pie + blank_theme +
+  theme(axis.text.x = element_blank())+
+  labs(title="Sexo dos pescadores na zona lacustre",subtitle="Número total de pescadores = 58")
+
+library(lubridate)
+
+# Assuming the date format is "year-day-month"
+socio_geral$Data.de.nascimento <- as.Date(socio_geral$Data.de.nascimento, format = "%Y-%d-%m")
+
+# Calculate ages
+socio_geral$Age <- interval(socio_geral$Data.de.nascimento, Sys.Date()) %/% years(1)
+
+# Check for complete cases (i.e., rows without NA values in the Age column)
+complete_rows <- complete.cases(socio_geral$Age)
+
+# Subset the data frame to exclude rows with NA values only in the Age column
+socio_geral1 <- socio_geral[complete_rows, ]
+
+# Bin ages into age groups (every 10 years)
+socio_geral1$Age_Group <- cut(socio_geral1$Age, breaks = seq(0, max(socio_geral1$Age) + 10, by = 10), right = FALSE)
+
+# Total count by age group
+total_counts <- table(socio_geral1$Age_Group)
+
+# Count by age group for each zone
+zone_counts <- with(socio_geral1, table(Zona.de.Pesca, Age_Group))
+
+zone_counts<-zone_counts[,-1]
+zone_counts<-zone_counts[,-1]
+colnames(zone_counts) <- c("29-","30-39","40-49","50-59","60-69","70+")
+total_counts<-total_counts[-1]
+total_counts<-total_counts[-1]
+
+# Estrutura etaria #####
+ordered_aliMat<-t(as.matrix(rbind(zone_counts,total_counts)))
+colnames(ordered_aliMat) <- c("Fluvial","Lacustre", "Transição", "Geral")
+ordem <- c("Geral","Fluvial","Transição","Lacustre")
+ordered_aliMat <- ordered_aliMat[, ordem]
+par(mfrow=c(1,1), mar=c(4,6,1,1), oma=c(0,0,0,0))
+x1 <- barplot(ordered_aliMat, beside = TRUE, horiz = T, yaxt = "n", col = terrain.colors(10)[c(4:1)])
+mtext(side = 2, line = 4, at = colMeans(x1), text = colnames(ordered_aliMat), cex = 1.25, las = 3)
+mtext(side = 2, line = 5, at = mean(x1), text = "Estrutura etária", cex = 1.25, las = 3)
+axis(side = 2, at = x1, labels = rep(rownames(ordered_aliMat), 4), cex = 0.7, las = 2)
+mtext("Número de pescadores", side = 1, line = 2, cex = 1.25)
+dev.off()
+
+####################################################
+#pescadores por zona
+ndependentes <- aggregate(Seq ~ Nome.Completo+Quantas.pessoas.dependem.da.sua.renda., data=socio_geral, length)
+ndependentes1 <- aggregate(Seq ~ Quantas.pessoas.dependem.da.sua.renda., data=ndependentes, length)
+
+colnames(ndependentes1)<-c("Número de dependentes","Soma dos dependentes")
+
+# Calculate proportions
+ndependentes1$prop <- ndependentes1$"Soma dos dependentes" / sum(ndependentes1$"Soma dos dependentes")
+
+ggplot(ndependentes1, aes(x = "", y = prop, fill = factor(`Número de dependentes`))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0) +
+  scale_fill_viridis_d(name = "Número de dependentes") +  # Using a color scale
+  theme_void() +  # Remove background, grid, numeric labels
+  theme(
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  ) +
+  labs(
+    title = "Soma dos dependentes por proporção de pescadores",
+    subtitle = "Número total de registros de pescadores = 80"
+  )
+
+#pescadores por zona
+ndependentes <- aggregate(Seq ~ Nome.Completo+Quantas.pessoas.dependem.da.sua.renda.+Zona.de.Pesca, data=socio_geral, length)
+ndependentes1 <- aggregate(Seq ~ Quantas.pessoas.dependem.da.sua.renda.+Zona.de.Pesca, data=ndependentes, length)
+
+colnames(ndependentes1)<-c("Número de dependentes","Zona","Soma dos dependentes")
+
+color <- c("#045e9a", "#da2420","#009241")
+
+fluvial_df <- ndependentes1[ndependentes1$Zona == "Fluvial", ]
+transicao_df <- ndependentes1[ndependentes1$Zona == "Transição", ]
+lacustre_df <- ndependentes1[ndependentes1$Zona == "Lacustre", ]
+
+
+# Calculate proportions
+fluvial_df$prop <- fluvial_df$"Soma dos dependentes" / sum(fluvial_df$"Soma dos dependentes")
+
+ggplot(fluvial_df, aes(x = "", y = prop, fill = factor(`Número de dependentes`))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0) +
+  scale_fill_viridis_d(name = "Número de dependentes") +  # Using a color scale
+  theme_void() +  # Remove background, grid, numeric labels
+  theme(
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  ) +
+  labs(
+    title = "Soma dos dependentes na zona fluvial por proporção de pescadores",
+    subtitle = "Número total de registros de pescadores = 8"
+  )
+
+# Calculate proportions
+transicao_df$prop <- transicao_df$"Soma dos dependentes" / sum(transicao_df$"Soma dos dependentes")
+
+ggplot(transicao_df, aes(x = "", y = prop, fill = factor(`Número de dependentes`))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0) +
+  scale_fill_viridis_d(name = "Número de dependentes") +  # Using a color scale
+  theme_void() +  # Remove background, grid, numeric labels
+  theme(
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  ) +
+  labs(
+    title = "Soma dos dependentes na zona transição por proporção de pescadores",
+    subtitle = "Número total de registros de pescadores = 14"
+  )
+
+# Calculate proportions
+lacustre_df$prop <- lacustre_df$"Soma dos dependentes" / sum(lacustre_df$"Soma dos dependentes")
+
+ggplot(lacustre_df, aes(x = "", y = prop, fill = factor(`Número de dependentes`))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0) +
+  scale_fill_viridis_d(name = "Número de dependentes") +  # Using a color scale
+  theme_void() +  # Remove background, grid, numeric labels
+  theme(
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  ) +
+  labs(
+    title = "Soma dos dependentes na zona lacustre por proporção de pescadores",
+    subtitle = "Número total de registros de pescadores = 58"
+  )
+
+####################################################
+#ajudantes por zona
+najudantes <- aggregate(Seq ~ Nome.Completo+Trabalha.com.ajudante.de.pesca., data=socio_geral, length)
+najudantes1 <- aggregate(Seq ~ Trabalha.com.ajudante.de.pesca., data=najudantes, length)
+
+colnames(najudantes1)<-c("Ajudantes","Número de pescadores")
+
+# Calculate proportions
+najudantes1$prop <- najudantes1$"Número de pescadores" / sum(najudantes1$"Número de pescadores")
+
+ggplot(najudantes1, aes(x = "", y = prop, fill = factor(`Número de pescadores`))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0) +
+  scale_fill_viridis_d(name = "Presença de ajudantes") +  # Using a color scale
+  theme_void() +  # Remove background, grid, numeric labels
+  theme(
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  ) +
+  labs(
+    title = "Proporção de pescadores com ajudantes ajudantes",
+    subtitle = "Número total de registros de pescadores = 80"
+  )
+
+
+najudantes <- aggregate(Seq ~ Nome.Completo+Trabalha.com.ajudante.de.pesca.+Zona.de.Pesca, data=socio_geral, length)
+najudantes1 <- aggregate(Seq ~ Trabalha.com.ajudante.de.pesca.+Zona.de.Pesca, data=najudantes, length)
+
+colnames(najudantes1)<-c("Ajudantes","Zona"," Número de pescadores")
+
+color <- c("#045e9a", "#da2420","#009241")
+
+fluvial_df <- najudantes1[najudantes1$Zona == "Fluvial", ]
+transicao_df <- najudantes1[najudantes1$Zona == "Transição", ]
+lacustre_df <- najudantes1[najudantes1$Zona == "Lacustre", ]
+
+
+# Calculate proportions
+fluvial_df$prop <- fluvial_df$"Soma dos ajudantes" / sum(fluvial_df$"Soma dos ajudantes")
+
+ggplot(fluvial_df, aes(x = "", y = prop, fill = factor(`Número de ajudantes`))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0) +
+  scale_fill_viridis_d(name = "Número de ajudantes") +  # Using a color scale
+  theme_void() +  # Remove background, grid, numeric labels
+  theme(
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  ) +
+  labs(
+    title = "Soma dos ajudantes na zona fluvial por proporção de pescadores",
+    subtitle = "Número total de registros de pescadores = 8"
+  )
+
+# Calculate proportions
+transicao_df$prop <- transicao_df$"Soma dos ajudantes" / sum(transicao_df$"Soma dos ajudantes")
+
+ggplot(transicao_df, aes(x = "", y = prop, fill = factor(`Número de ajudantes`))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0) +
+  scale_fill_viridis_d(name = "Número de ajudantes") +  # Using a color scale
+  theme_void() +  # Remove background, grid, numeric labels
+  theme(
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  ) +
+  labs(
+    title = "Soma dos ajudantes na zona transição por proporção de pescadores",
+    subtitle = "Número total de registros de pescadores = 14"
+  )
+
+# Calculate proportions
+lacustre_df$prop <- lacustre_df$"Soma dos ajudantes" / sum(lacustre_df$"Soma dos ajudantes")
+
+ggplot(lacustre_df, aes(x = "", y = prop, fill = factor(`Número de ajudantes`))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0) +
+  scale_fill_viridis_d(name = "Número de ajudantes") +  # Using a color scale
+  theme_void() +  # Remove background, grid, numeric labels
+  theme(
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  ) +
+  labs(
+    title = "Soma dos ajudantes na zona lacustre por proporção de pescadores",
+    subtitle = "Número total de registros de pescadores = 58"
+  )
+
+#########################
+## quais ajudantes
+
+najudantes <- aggregate(Seq ~ Nome.Completo+Quem.é.são.os.ajudantes+Zona.de.Pesca, data=socio_geral, length)
+najudantes1 <- aggregate(Seq ~ Quem.é.são.os.ajudantes+Zona.de.Pesca, data=najudantes, length)
+
+# Separar as múltiplas entradas em uma nova linha
+dados_separados <- najudantes1 %>%
+  separate_rows(Quem.é.são.os.ajudantes, sep = ", ") %>%
+  mutate(Quem.é.são.os.ajudantes = trimws(Quem.é.são.os.ajudantes))  # Remover espaços em branco
+
+# Somar os valores da coluna Seq para cada classe única na primeira coluna
+nova_tabela <- dados_separados %>%
+  group_by(Quem.é.são.os.ajudantes, Zona.de.Pesca) %>%
+  summarise(Seq = sum(Seq))
+
+nova_tabela<-as.data.frame(nova_tabela)
+
+nova_tabela_geral <- nova_tabela %>%
+  separate_rows(Quem.é.são.os.ajudantes, sep = ", ") %>%
+  group_by(Quem.é.são.os.ajudantes) %>%
+  summarise(Seq = sum(Seq))
+
+nova_tabela_geral<-as.data.frame(nova_tabela_geral)
+
+colnames(nova_tabela_geral)<-c("Quem são os ajudantes","Número de registros")
+
+# Calculate proportions
+nova_tabela_geral$prop <- nova_tabela_geral$"Número de registros" / sum(nova_tabela_geral$"Número de registros")
+
+ggplot(nova_tabela_geral, aes(x = "", y = prop, fill = factor(`Quem são os ajudantes`))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0) +
+  scale_fill_viridis_d(name = "Número de registros de classes de ajudantes") +  # Using a color scale
+  theme_void() +  # Remove background, grid, numeric labels
+  theme(
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  ) +
+  labs(
+    title = "Número de registros de classes ajudantes",
+    subtitle = "Número total de pescadores com ajudantes = 54"
+)
+
+colnames(nova_tabela)<-c("Quem são os ajudantes","Zona","Número de registros")
+
+fluvial_df <- nova_tabela[nova_tabela$Zona == "Fluvial", ]    #6
+transicao_df <- nova_tabela[nova_tabela$Zona == "Transição", ] #8
+lacustre_df <- nova_tabela[nova_tabela$Zona == "Lacustre", ]  #40
+
+# Calculate proportions
+fluvial_df$prop <- fluvial_df$"Número de registros" / sum(fluvial_df$"Número de registros")
+
+ggplot(fluvial_df, aes(x = "", y = prop, fill = factor(`Quem são os ajudantes`))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0) +
+  scale_fill_viridis_d(name = "Número de registros de classes de ajudantes") +  # Using a color scale
+  theme_void() +  # Remove background, grid, numeric labels
+  theme(
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  ) +
+  labs(
+    title = "Número de registros de classes de ajudantes na zona fluvial",
+    subtitle = "Número total de pescadores com ajudantes = 6"
+)
+
+# Calculate proportions
+transicao_df$prop <- transicao_df$"Número de registros" / sum(transicao_df$"Número de registros")
+
+ggplot(transicao_df, aes(x = "", y = prop, fill = factor(`Quem são os ajudantes`))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0) +
+  scale_fill_viridis_d(name = "Número de registros de classes de ajudantes") +  # Using a color scale
+  theme_void() +  # Remove background, grid, numeric labels
+  theme(
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  ) +
+  labs(
+    title = "Número de registros de classes de ajudantes na zona fluvial",
+    subtitle = "Número total de pescadores com ajudantes = 8"
+  )
+
+# Calculate proportions
+lacustre_df$prop <- lacustre_df$"Número de registros" / sum(lacustre_df$"Número de registros")
+
+ggplot(lacustre_df, aes(x = "", y = prop, fill = factor(`Quem são os ajudantes`))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0) +
+  scale_fill_viridis_d(name = "Número de registros de classes de ajudantes") +  # Using a color scale
+  theme_void() +  # Remove background, grid, numeric labels
+  theme(
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  ) +
+  labs(
+    title = "Número de registros de classes de ajudantes na zona fluvial",
+    subtitle = "Número total de pescadores com ajudantes = 40"
+  )
+
+######################
+#########################
+## outras fontes de renda
+
+nrenda <- aggregate(Seq ~ Nome.Completo+Qual.é.a.origem.da.sua.outra.fonte.de.renda.+Zona.de.Pesca, data=socio_geral, length)
+nrenda1  <- aggregate(Seq ~ Qual.é.a.origem.da.sua.outra.fonte.de.renda.+Zona.de.Pesca, data=najudantes, length)
+
+# Somar os valores da coluna Seq para cada classe única na primeira coluna
+nova_tabela <- nrenda1  %>%
+  group_by(Qual.é.a.origem.da.sua.outra.fonte.de.renda., Zona.de.Pesca) %>%
+  summarise(Seq = sum(Seq))
+
+nova_tabela<-as.data.frame(nova_tabela)
+
+nova_tabela_geral <- nova_tabela %>%
+  separate_rows(Qual.é.a.origem.da.sua.outra.fonte.de.renda., sep = ", ") %>%
+  group_by(Qual.é.a.origem.da.sua.outra.fonte.de.renda.) %>%
+  summarise(Seq = sum(Seq))
+
+nova_tabela_geral<-as.data.frame(nova_tabela_geral)
+
+colnames(nova_tabela_geral)<-c("Origem de outra fonte de renda","Número de registros")
+
+# Calculate proportions
+nova_tabela_geral$prop <- nova_tabela_geral$"Número de registros" / sum(nova_tabela_geral$"Número de registros")
+
+ggplot(nova_tabela_geral, aes(x = "", y = prop, fill = factor(`Origem de outra fonte de renda`))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0) +
+  scale_fill_viridis_d(name = "Outras fontes de renda") +  # Using a color scale
+  theme_void() +  # Remove background, grid, numeric labels
+  theme(
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  ) +
+  labs(
+    title = "Número de registros de outras fontes de renda",
+    subtitle = "Número total de pescadores com outras fontes de renda = 49 de 80 (total)"
+  )
+
+colnames(nova_tabela)<-c("Origem de outra fonte de renda","Zona","Número de registros")
+
+fluvial_df <- nova_tabela[nova_tabela$Zona == "Fluvial", ]    #6
+transicao_df <- nova_tabela[nova_tabela$Zona == "Transição", ] #8
+lacustre_df <- nova_tabela[nova_tabela$Zona == "Lacustre", ]  #40
+
+# Calculate proportions
+fluvial_df$prop <- fluvial_df$"Número de registros" / sum(fluvial_df$"Número de registros")
+
+ggplot(fluvial_df, aes(x = "", y = prop, fill = factor(`Origem de outra fonte de renda`))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0) +
+  scale_fill_viridis_d(name = "Outras fontes de renda") +  # Using a color scale
+  theme_void() +  # Remove background, grid, numeric labels
+  theme(
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  ) +
+  labs(
+    title = "Número de registros de outras fontes de renda na zona fluvial",
+    subtitle = "Número total de pescadores com outras fontes de renda = 2 de 8 (total)"
+  )
+
+# Calculate proportions
+transicao_df$prop <- transicao_df$"Número de registros" / sum(transicao_df$"Número de registros")
+
+ggplot(transicao_df, aes(x = "", y = prop, fill = factor(`Origem de outra fonte de renda`))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0) +
+  scale_fill_viridis_d(name = "Outras fontes de renda") +  # Using a color scale
+  theme_void() +  # Remove background, grid, numeric labels
+  theme(
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  ) +
+  labs(
+    title = "Número de registros de outras fontes de renda na zona transição",
+    subtitle = "Número total de pescadores com outras fontes de renda = 5 de 14 (total)"
+  )
+
+# Calculate proportions
+lacustre_df$prop <- lacustre_df$"Número de registros" / sum(lacustre_df$"Número de registros")
+
+ggplot(lacustre_df, aes(x = "", y = prop, fill = factor(`Origem de outra fonte de renda`))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0) +
+  scale_fill_viridis_d(name = "Outras fontes de renda") +  # Using a color scale
+  theme_void() +  # Remove background, grid, numeric labels
+  theme(
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  ) +
+  labs(
+    title = "Número de registros de outras fontes de renda na zona lacustre",
+    subtitle = "Número total de pescadores com outras fontes de renda = 42 de 58 (total)"
+  )
+
+################
+#tempo de pesca
+# Assuming the date format is "year-day-month"
+# Assuming the date format is "year-day-month"
+anos_de_pesca <- aggregate(Seq ~ Nome.Completo+Há.quantos.anos.você.pesca.+Zona.de.Pesca, data=socio_geral, length)
+
+# Bin ages into age groups (every 10 years)
+socio_geral$anos_de_pesca <- cut(socio_geral$Há.quantos.anos.você.pesca., breaks = seq(0, max(socio_geral$Há.quantos.anos.você.pesca.) + 5, by = 5), right = FALSE)
+
+# Total count by age group
+total_counts <- table(socio_geral$anos_de_pesca)
+
+# Count by age group for each zone
+zone_counts <- with(socio_geral, table(Zona.de.Pesca, anos_de_pesca))
+
+colnames(zone_counts) <- c("1-4","5-9","10-14","15-19","20-24","25-29","30-34","35-39","40+")
+
+
+# Estrutura etaria #####
+ordered_aliMat<-t(as.matrix(rbind(zone_counts,total_counts)))
+colnames(ordered_aliMat) <- c("Fluvial","Lacustre", "Transição", "Geral")
+ordem <- c("Geral","Fluvial","Transição","Lacustre")
+ordered_aliMat <- ordered_aliMat[, ordem]
+par(mfrow=c(1,1), mar=c(4,6,1,1), oma=c(0,0,0,0))
+x1 <- barplot(ordered_aliMat, beside = TRUE, horiz = T, yaxt = "n", col = terrain.colors(10)[c(4:1)], width = 0.5)
+mtext(side = 2, line = 3, at = colMeans(x1), text = colnames(ordered_aliMat), cex = 1.25, las = 3)
+mtext(side = 2, line = 4, at = mean(x1), text = "Tempo de pesca no reservatório", cex = 1.25, las = 3)
+axis(side = 2, at = x1, labels = rep(rownames(ordered_aliMat), 4),cex.axis = 0.7, cex = 0.7, las = 2)
+mtext("Número de pescadores", side = 1, line = 2, cex = 1.25)
+dev.off()
