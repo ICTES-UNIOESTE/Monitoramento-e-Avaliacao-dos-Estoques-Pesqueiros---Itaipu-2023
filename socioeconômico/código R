@@ -1,4 +1,4 @@
-# Biopesca março a outubro de 2023 ####
+# socioeconomico 2023 ####
 rm()
 setwd("C:/Users/lg_ri/Dropbox/Postdoc/UNIOESTE/Relatórios Itaipu/R socioeconomico")
 library(readxl)
@@ -8,12 +8,12 @@ library(dplyr)
 library(ggplot2)
 library(openxlsx)
 library(ggrepel)
-
+library(lubridate)
 socio_geral <- data.frame(read_xlsx("Cadastro_Socioeconomico_dos_Pescadores_2023.xlsx", sheet="0"))
-socio_geral$Data.do.registro <-as.Date(socio_geral$Data.do.registro, format = "%y/%m/%d") # Data em (mmm aaaa)
-socio_geral <- subset(socio_geral, format(Data.do.registro, "%Y") == "2023")
+socio_geral <- subset(socio_geral, Ano.de.referência== "2023")
 socio_geral$Data.de.nascimento <-as.Date(socio_geral$Data.de.nascimento, format = "%d/%m/%Y") # Data em (mmm aaaa)
 socio_geral$Seq <- seq(nrow(socio_geral))
+#write.xlsx(socio_geral, "C:/Users/lg_ri/Dropbox/Postdoc/UNIOESTE/Relatórios Itaipu/R socioeconomico/socioeconomico2023.xlsx", rowNames = FALSE)
 
 #pescadores por zona
 npescadorzona <- aggregate(Seq ~ Nome.Completo+Zona.de.Pesca, data=socio_geral, length)
@@ -53,7 +53,7 @@ blank_theme <- theme_minimal() +
 
 pie + blank_theme +
   theme(axis.text.x = element_blank())+
-  labs(title="Pescadores por zonas",subtitle="Número total de registros de pescadores = 80")
+  labs(title="Pescadores por zonas",subtitle="Número total de registros de pescadores = 241")
 
 #pescadores por sexo
 npescadorsexo <- aggregate(Seq ~ Nome.Completo+Sexo, data=socio_geral, length)
@@ -93,7 +93,7 @@ blank_theme <- theme_minimal() +
 
 pie + blank_theme +
   theme(axis.text.x = element_blank())+
-  labs(title="Sexo dos pescadores",subtitle="Número total de pescadores = 80")
+  labs(title="Sexo dos pescadores",subtitle="Número total de pescadores = 241")
 
 #pescadores por sexo por zona
 npescadorsexo <- aggregate(Seq ~ Nome.Completo+Sexo+Zona.de.Pesca, data=socio_geral, length)
@@ -137,7 +137,7 @@ blank_theme <- theme_minimal() +
 
 pie + blank_theme +
   theme(axis.text.x = element_blank())+
-  labs(title="Sexo dos pescadores na zona fluvial",subtitle="Número total de pescadores = 8")
+  labs(title="Sexo dos pescadores na zona fluvial",subtitle="Número total de pescadores = 18")
 
 # Criar um fator com a ordem desejada
 ordem <- c("Masculino", "Feminino", "Não informado")
@@ -171,7 +171,7 @@ blank_theme <- theme_minimal() +
 
 pie + blank_theme +
   theme(axis.text.x = element_blank())+
-  labs(title="Sexo dos pescadores na zona transição",subtitle="Número total de pescadores = 14")
+  labs(title="Sexo dos pescadores na zona transição",subtitle="Número total de pescadores = 44")
 
 # Criar um fator com a ordem desejada
 ordem <- c("Masculino", "Feminino", "Não informado")
@@ -205,9 +205,7 @@ blank_theme <- theme_minimal() +
 
 pie + blank_theme +
   theme(axis.text.x = element_blank())+
-  labs(title="Sexo dos pescadores na zona lacustre",subtitle="Número total de pescadores = 58")
-
-library(lubridate)
+  labs(title="Sexo dos pescadores na zona lacustre",subtitle="Número total de pescadores = 179")
 
 # Assuming the date format is "year-day-month"
 socio_geral$Data.de.nascimento <- as.Date(socio_geral$Data.de.nascimento, format = "%Y-%d-%m")
@@ -236,13 +234,25 @@ colnames(zone_counts) <- c("29-","30-39","40-49","50-59","60-69","70+")
 total_counts<-total_counts[-1]
 total_counts<-total_counts[-1]
 
+# Calcula as porcentagens para cada grupo etário em relação ao total de cada zona
+zone_percentages <- zone_counts / rowSums(zone_counts) * 100
+total_percentages <- total_counts/ sum(total_counts) * 100
+
+# Junta as contagens de idade e as porcentagens totais
+zone_data <- cbind(zone_counts, zone_percentages)
+
+combined_mat <- rbind(zone_data, total_counts)
+
 # Estrutura etaria #####
+#FAZER EM PORCENTAGEM
 ordered_aliMat<-t(as.matrix(rbind(zone_counts,total_counts)))
 colnames(ordered_aliMat) <- c("Fluvial","Lacustre", "Transição", "Geral")
 ordem <- c("Geral","Fluvial","Transição","Lacustre")
 ordered_aliMat <- ordered_aliMat[, ordem]
 par(mfrow=c(1,1), mar=c(4,6,1,1), oma=c(0,0,0,0))
-x1 <- barplot(ordered_aliMat, beside = TRUE, horiz = T, yaxt = "n", col = terrain.colors(10)[c(4:1)])
+tick_positions <- seq(0, 80, by = 10)
+x1 <- barplot(ordered_aliMat, beside = TRUE, horiz = T, yaxt = "n", col = terrain.colors(10)[c(4:1)],xlim=c(0, 80))
+axis(side = 1, at = tick_positions)
 mtext(side = 2, line = 4, at = colMeans(x1), text = colnames(ordered_aliMat), cex = 1.25, las = 3)
 mtext(side = 2, line = 5, at = mean(x1), text = "Estrutura etária", cex = 1.25, las = 3)
 axis(side = 2, at = x1, labels = rep(rownames(ordered_aliMat), 4), cex = 0.7, las = 2)
@@ -250,7 +260,7 @@ mtext("Número de pescadores", side = 1, line = 2, cex = 1.25)
 dev.off()
 
 ####################################################
-#pescadores por zona
+#dependentes por zona
 ndependentes <- aggregate(Seq ~ Nome.Completo+Quantas.pessoas.dependem.da.sua.renda., data=socio_geral, length)
 ndependentes1 <- aggregate(Seq ~ Quantas.pessoas.dependem.da.sua.renda., data=ndependentes, length)
 
@@ -272,8 +282,8 @@ ggplot(ndependentes1, aes(x = "", y = prop, fill = factor(`Número de dependente
     legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
   ) +
   labs(
-    title = "Soma dos dependentes por proporção de pescadores",
-    subtitle = "Número total de registros de pescadores = 80"
+    title = "Dependentes por proporção de pescadores",
+    subtitle = "Número total de registros de pescadores = 241"
   )
 
 #pescadores por zona
@@ -305,8 +315,8 @@ ggplot(fluvial_df, aes(x = "", y = prop, fill = factor(`Número de dependentes`)
     legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
   ) +
   labs(
-    title = "Soma dos dependentes na zona fluvial por proporção de pescadores",
-    subtitle = "Número total de registros de pescadores = 8"
+    title = "Dependentes na zona fluvial por proporção de pescadores",
+    subtitle = "Número total de registros de pescadores = 18"
   )
 
 # Calculate proportions
@@ -325,8 +335,8 @@ ggplot(transicao_df, aes(x = "", y = prop, fill = factor(`Número de dependentes
     legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
   ) +
   labs(
-    title = "Soma dos dependentes na zona transição por proporção de pescadores",
-    subtitle = "Número total de registros de pescadores = 14"
+    title = "Dependentes na zona transição por proporção de pescadores",
+    subtitle = "Número total de registros de pescadores = 44"
   )
 
 # Calculate proportions
@@ -345,8 +355,8 @@ ggplot(lacustre_df, aes(x = "", y = prop, fill = factor(`Número de dependentes`
     legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
   ) +
   labs(
-    title = "Soma dos dependentes na zona lacustre por proporção de pescadores",
-    subtitle = "Número total de registros de pescadores = 58"
+    title = "Dependentes na zona lacustre por proporção de pescadores",
+    subtitle = "Número total de registros de pescadores = 179"
   )
 
 ####################################################
@@ -359,7 +369,7 @@ colnames(najudantes1)<-c("Ajudantes","Número de pescadores")
 # Calculate proportions
 najudantes1$prop <- najudantes1$"Número de pescadores" / sum(najudantes1$"Número de pescadores")
 
-ggplot(najudantes1, aes(x = "", y = prop, fill = factor(`Número de pescadores`))) +
+ggplot(najudantes1, aes(x = "", y = prop, fill = factor(`Ajudantes`))) +
   geom_bar(width = 1, stat = "identity") +
   coord_polar("y", start = 0) +
   scale_fill_viridis_d(name = "Presença de ajudantes") +  # Using a color scale
@@ -372,15 +382,15 @@ ggplot(najudantes1, aes(x = "", y = prop, fill = factor(`Número de pescadores`)
     legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
   ) +
   labs(
-    title = "Proporção de pescadores com ajudantes ajudantes",
-    subtitle = "Número total de registros de pescadores = 80"
+    title = "Proporção de pescadores com ajudantes",
+    subtitle = "Número total de registros de pescadores = 241"
   )
 
 
 najudantes <- aggregate(Seq ~ Nome.Completo+Trabalha.com.ajudante.de.pesca.+Zona.de.Pesca, data=socio_geral, length)
 najudantes1 <- aggregate(Seq ~ Trabalha.com.ajudante.de.pesca.+Zona.de.Pesca, data=najudantes, length)
 
-colnames(najudantes1)<-c("Ajudantes","Zona"," Número de pescadores")
+colnames(najudantes1)<-c("Ajudantes","Zona","Número de pescadores")
 
 color <- c("#045e9a", "#da2420","#009241")
 
@@ -390,12 +400,12 @@ lacustre_df <- najudantes1[najudantes1$Zona == "Lacustre", ]
 
 
 # Calculate proportions
-fluvial_df$prop <- fluvial_df$"Soma dos ajudantes" / sum(fluvial_df$"Soma dos ajudantes")
+fluvial_df$prop <- fluvial_df$"Número de pescadores" / sum(fluvial_df$"Número de pescadores")
 
-ggplot(fluvial_df, aes(x = "", y = prop, fill = factor(`Número de ajudantes`))) +
+ggplot(fluvial_df, aes(x = "", y = prop, fill = factor(`Ajudantes`))) +
   geom_bar(width = 1, stat = "identity") +
   coord_polar("y", start = 0) +
-  scale_fill_viridis_d(name = "Número de ajudantes") +  # Using a color scale
+  scale_fill_viridis_d(name = "Presença de ajudantes") +  # Using a color scale
   theme_void() +  # Remove background, grid, numeric labels
   theme(
     legend.position = "right",  # Set legend position to right
@@ -405,17 +415,17 @@ ggplot(fluvial_df, aes(x = "", y = prop, fill = factor(`Número de ajudantes`)))
     legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
   ) +
   labs(
-    title = "Soma dos ajudantes na zona fluvial por proporção de pescadores",
-    subtitle = "Número total de registros de pescadores = 8"
+    title = "Proporção de pescadores com ajudantes na zona fluvial",
+    subtitle = "Número total de registros de pescadores = 18"
   )
 
 # Calculate proportions
-transicao_df$prop <- transicao_df$"Soma dos ajudantes" / sum(transicao_df$"Soma dos ajudantes")
+transicao_df$prop <- transicao_df$"Número de pescadores" / sum(transicao_df$"Número de pescadores")
 
-ggplot(transicao_df, aes(x = "", y = prop, fill = factor(`Número de ajudantes`))) +
+ggplot(transicao_df, aes(x = "", y = prop, fill = factor(`Ajudantes`))) +
   geom_bar(width = 1, stat = "identity") +
   coord_polar("y", start = 0) +
-  scale_fill_viridis_d(name = "Número de ajudantes") +  # Using a color scale
+  scale_fill_viridis_d(name = "Presença de ajudantes") +  # Using a color scale
   theme_void() +  # Remove background, grid, numeric labels
   theme(
     legend.position = "right",  # Set legend position to right
@@ -425,17 +435,17 @@ ggplot(transicao_df, aes(x = "", y = prop, fill = factor(`Número de ajudantes`)
     legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
   ) +
   labs(
-    title = "Soma dos ajudantes na zona transição por proporção de pescadores",
-    subtitle = "Número total de registros de pescadores = 14"
+    title = "Proporção de pescadores com ajudantes na zona transição",
+    subtitle = "Número total de registros de pescadores = 44"
   )
 
 # Calculate proportions
-lacustre_df$prop <- lacustre_df$"Soma dos ajudantes" / sum(lacustre_df$"Soma dos ajudantes")
+lacustre_df$prop <- lacustre_df$"Número de pescadores" / sum(lacustre_df$"Número de pescadores")
 
-ggplot(lacustre_df, aes(x = "", y = prop, fill = factor(`Número de ajudantes`))) +
+ggplot(lacustre_df, aes(x = "", y = prop, fill = factor(`Ajudantes`))) +
   geom_bar(width = 1, stat = "identity") +
   coord_polar("y", start = 0) +
-  scale_fill_viridis_d(name = "Número de ajudantes") +  # Using a color scale
+  scale_fill_viridis_d(name = "Presença de ajudantes") +  # Using a color scale
   theme_void() +  # Remove background, grid, numeric labels
   theme(
     legend.position = "right",  # Set legend position to right
@@ -445,13 +455,12 @@ ggplot(lacustre_df, aes(x = "", y = prop, fill = factor(`Número de ajudantes`))
     legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
   ) +
   labs(
-    title = "Soma dos ajudantes na zona lacustre por proporção de pescadores",
-    subtitle = "Número total de registros de pescadores = 58"
+    title = "Proporção de pescadores com ajudantes na zona lacustre",
+    subtitle = "Número total de registros de pescadores = 179"
   )
 
 #########################
 ## quais ajudantes
-
 najudantes <- aggregate(Seq ~ Nome.Completo+Quem.é.são.os.ajudantes+Zona.de.Pesca, data=socio_geral, length)
 najudantes1 <- aggregate(Seq ~ Quem.é.são.os.ajudantes+Zona.de.Pesca, data=najudantes, length)
 
@@ -479,21 +488,35 @@ colnames(nova_tabela_geral)<-c("Quem são os ajudantes","Número de registros")
 # Calculate proportions
 nova_tabela_geral$prop <- nova_tabela_geral$"Número de registros" / sum(nova_tabela_geral$"Número de registros")
 
+# Arrange the data frame in descending order based on 'Número de registros'
+nova_tabela_geral <- nova_tabela_geral %>% arrange(desc(`Número de registros`))
+
+# Select the top 5 classes
+top_classes <- head(nova_tabela_geral, 5)
+
+# Summarize the remaining classes as 'Outros'
+outros <- nova_tabela_geral %>% slice(-(1:5)) %>% summarise(`Quem são os ajudantes` = "Outros",
+                                             `Número de registros` = sum(`Número de registros`),
+                                             prop = sum(prop))
+
+# Combine the top classes and 'Outros' into a new data frame
+nova_tabela_geral <- rbind(top_classes, outros)
+
 ggplot(nova_tabela_geral, aes(x = "", y = prop, fill = factor(`Quem são os ajudantes`))) +
   geom_bar(width = 1, stat = "identity") +
   coord_polar("y", start = 0) +
-  scale_fill_viridis_d(name = "Número de registros de classes de ajudantes") +  # Using a color scale
+  scale_fill_viridis_d(name = "Ajudantes") +  # Using a color scale
   theme_void() +  # Remove background, grid, numeric labels
   theme(
     legend.position = "right",  # Set legend position to right
     legend.direction = "vertical",  # Set legend direction to vertical
     legend.justification = "bottom",  # Adjust legend justification
     legend.box.just = "right",  # Adjust legend box justification
-    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+    legend.margin = margin(t = 10, r = 0, b = 0, l = -10)  # Adjust legend margin
   ) +
   labs(
-    title = "Número de registros de classes ajudantes",
-    subtitle = "Número total de pescadores com ajudantes = 54"
+    title = "Classes de ajudantes",
+    subtitle = "Registros de ajudantes = 159"
 )
 
 colnames(nova_tabela)<-c("Quem são os ajudantes","Zona","Número de registros")
@@ -508,7 +531,7 @@ fluvial_df$prop <- fluvial_df$"Número de registros" / sum(fluvial_df$"Número d
 ggplot(fluvial_df, aes(x = "", y = prop, fill = factor(`Quem são os ajudantes`))) +
   geom_bar(width = 1, stat = "identity") +
   coord_polar("y", start = 0) +
-  scale_fill_viridis_d(name = "Número de registros de classes de ajudantes") +  # Using a color scale
+  scale_fill_viridis_d(name = "Ajudantes") +  # Using a color scale
   theme_void() +  # Remove background, grid, numeric labels
   theme(
     legend.position = "right",  # Set legend position to right
@@ -518,8 +541,8 @@ ggplot(fluvial_df, aes(x = "", y = prop, fill = factor(`Quem são os ajudantes`)
     legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
   ) +
   labs(
-    title = "Número de registros de classes de ajudantes na zona fluvial",
-    subtitle = "Número total de pescadores com ajudantes = 6"
+    title = "Classes de ajudantes na zona fluvial",
+    subtitle = "Registros de ajudantes = 11"
 )
 
 # Calculate proportions
@@ -528,7 +551,7 @@ transicao_df$prop <- transicao_df$"Número de registros" / sum(transicao_df$"Nú
 ggplot(transicao_df, aes(x = "", y = prop, fill = factor(`Quem são os ajudantes`))) +
   geom_bar(width = 1, stat = "identity") +
   coord_polar("y", start = 0) +
-  scale_fill_viridis_d(name = "Número de registros de classes de ajudantes") +  # Using a color scale
+  scale_fill_viridis_d(name = "Ajudantes") +  # Using a color scale
   theme_void() +  # Remove background, grid, numeric labels
   theme(
     legend.position = "right",  # Set legend position to right
@@ -538,28 +561,42 @@ ggplot(transicao_df, aes(x = "", y = prop, fill = factor(`Quem são os ajudantes
     legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
   ) +
   labs(
-    title = "Número de registros de classes de ajudantes na zona fluvial",
-    subtitle = "Número total de pescadores com ajudantes = 8"
+    title = "Classes de ajudantes na zona transição",
+    subtitle = "Registros de ajudantes = 22"
   )
 
 # Calculate proportions
 lacustre_df$prop <- lacustre_df$"Número de registros" / sum(lacustre_df$"Número de registros")
 
+# Arrange the data frame in descending order based on 'Número de registros'
+lacustre_df <- lacustre_df %>% arrange(desc(`Número de registros`))
+
+# Select the top 5 classes
+top_classes_la <- head(lacustre_df, 5)
+
+# Summarize the remaining classes as 'Outros'
+outros_la <- lacustre_df %>% slice(-(1:5)) %>% summarise(`Quem são os ajudantes` = "Outros",Zona="Lacustre",
+                                                         `Número de registros` = sum(`Número de registros`),
+                                                         prop = sum(prop))
+
+# Combine the top classes and 'Outros' into a new data frame
+lacustre_df <- rbind(top_classes_la, outros_la)
+
 ggplot(lacustre_df, aes(x = "", y = prop, fill = factor(`Quem são os ajudantes`))) +
   geom_bar(width = 1, stat = "identity") +
   coord_polar("y", start = 0) +
-  scale_fill_viridis_d(name = "Número de registros de classes de ajudantes") +  # Using a color scale
+  scale_fill_viridis_d(name = "Ajudantes") +  # Using a color scale
   theme_void() +  # Remove background, grid, numeric labels
   theme(
     legend.position = "right",  # Set legend position to right
     legend.direction = "vertical",  # Set legend direction to vertical
     legend.justification = "bottom",  # Adjust legend justification
     legend.box.just = "right",  # Adjust legend box justification
-    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+    legend.margin = margin(t = 10, r = 0, b = 0, l = -10)  # Adjust legend margin
   ) +
   labs(
-    title = "Número de registros de classes de ajudantes na zona fluvial",
-    subtitle = "Número total de pescadores com ajudantes = 40"
+    title = "Classes de ajudantes na zona lacustre",
+    subtitle = "Registros de ajudantes = 126"
   )
 
 ######################
@@ -567,7 +604,8 @@ ggplot(lacustre_df, aes(x = "", y = prop, fill = factor(`Quem são os ajudantes`
 ## outras fontes de renda
 
 nrenda <- aggregate(Seq ~ Nome.Completo+Qual.é.a.origem.da.sua.outra.fonte.de.renda.+Zona.de.Pesca, data=socio_geral, length)
-nrenda1  <- aggregate(Seq ~ Qual.é.a.origem.da.sua.outra.fonte.de.renda.+Zona.de.Pesca, data=najudantes, length)
+nrenda <- subset(nrenda, !grepl("Não", Qual.é.a.origem.da.sua.outra.fonte.de.renda.))
+nrenda1  <- aggregate(Seq ~ Qual.é.a.origem.da.sua.outra.fonte.de.renda.+Zona.de.Pesca, data=nrenda, length)
 
 # Somar os valores da coluna Seq para cada classe única na primeira coluna
 nova_tabela <- nrenda1  %>%
@@ -588,10 +626,43 @@ colnames(nova_tabela_geral)<-c("Origem de outra fonte de renda","Número de regi
 # Calculate proportions
 nova_tabela_geral$prop <- nova_tabela_geral$"Número de registros" / sum(nova_tabela_geral$"Número de registros")
 
-ggplot(nova_tabela_geral, aes(x = "", y = prop, fill = factor(`Origem de outra fonte de renda`))) +
+# Arrange the data frame in descending order based on 'Número de registros'
+nova_tabela_geral <- nova_tabela_geral %>% arrange(desc(`Número de registros`))
+
+# Select the top 5 classes
+top_classes <- head(nova_tabela_geral, 5)
+
+# Summarize the remaining classes as 'Outros'
+outros <- nova_tabela_geral %>% slice(-(1:5)) %>% summarise(`Origem de outra fonte de renda` = "Outros",
+                                                            `Número de registros` = sum(`Número de registros`),
+                                                            prop = sum(prop))
+
+# Combine the top classes and 'Outros' into a new data frame
+nova_tabela_geral <- rbind(top_classes, outros)
+
+# Copiar o dataframe original
+df_novo <- nova_tabela_geral
+
+# Filtrar as linhas que possuem 'Outros' como a origem da fonte de renda
+outros <- df_novo[df_novo$`Origem de outra fonte de renda` == "Outros", ]
+
+# Somar os valores das linhas 'Outros' para obter a soma total
+soma_outros <- colSums(outros[, c("Número de registros", "prop")])
+
+
+# Excluir as linhas 'Outros' do dataframe original
+df_novo <- df_novo[df_novo$`Origem de outra fonte de renda` != "Outros", ]
+
+nova_linha<-c("Origem de outra fonte de renda"="Outros",soma_outros)
+
+# Adicionar a nova linha 'Outros (Agregado)' ao dataframe
+df_novo <- rbind(df_novo, nova_linha)
+
+
+ggplot(df_novo, aes(x = "", y = prop, fill = factor(`Origem de outra fonte de renda`))) +
   geom_bar(width = 1, stat = "identity") +
   coord_polar("y", start = 0) +
-  scale_fill_viridis_d(name = "Outras fontes de renda") +  # Using a color scale
+  scale_fill_viridis_d(name = "Fontes de renda") +  # Using a color scale
   theme_void() +  # Remove background, grid, numeric labels
   theme(
     legend.position = "right",  # Set legend position to right
@@ -602,7 +673,7 @@ ggplot(nova_tabela_geral, aes(x = "", y = prop, fill = factor(`Origem de outra f
   ) +
   labs(
     title = "Número de registros de outras fontes de renda",
-    subtitle = "Número total de pescadores com outras fontes de renda = 49 de 80 (total)"
+    subtitle = "Número total de pescadores com outras fontes de renda = 152 de 241 (total)"
   )
 
 colnames(nova_tabela)<-c("Origem de outra fonte de renda","Zona","Número de registros")
@@ -617,7 +688,7 @@ fluvial_df$prop <- fluvial_df$"Número de registros" / sum(fluvial_df$"Número d
 ggplot(fluvial_df, aes(x = "", y = prop, fill = factor(`Origem de outra fonte de renda`))) +
   geom_bar(width = 1, stat = "identity") +
   coord_polar("y", start = 0) +
-  scale_fill_viridis_d(name = "Outras fontes de renda") +  # Using a color scale
+  scale_fill_viridis_d(name = "Fontes de renda") +  # Using a color scale
   theme_void() +  # Remove background, grid, numeric labels
   theme(
     legend.position = "right",  # Set legend position to right
@@ -628,16 +699,48 @@ ggplot(fluvial_df, aes(x = "", y = prop, fill = factor(`Origem de outra fonte de
   ) +
   labs(
     title = "Número de registros de outras fontes de renda na zona fluvial",
-    subtitle = "Número total de pescadores com outras fontes de renda = 2 de 8 (total)"
+    subtitle = "Número total de pescadores com outras fontes de renda = 5 de 18 (total)"
   )
 
 # Calculate proportions
 transicao_df$prop <- transicao_df$"Número de registros" / sum(transicao_df$"Número de registros")
 
-ggplot(transicao_df, aes(x = "", y = prop, fill = factor(`Origem de outra fonte de renda`))) +
+# Arrange the data frame in descending order based on 'Número de registros'
+nova_tabela_trans <- transicao_df %>% arrange(desc(`Número de registros`))
+
+# Select the top 5 classes
+top_classes <- head(nova_tabela_trans, 5)
+
+# Summarize the remaining classes as 'Outros'
+outros <- nova_tabela_trans %>% slice(-(1:5)) %>% summarise(`Origem de outra fonte de renda` = "Outros","Zona"="Transição",
+                                                            `Número de registros` = sum(`Número de registros`),
+                                                            prop = sum(prop))
+
+# Combine the top classes and 'Outros' into a new data frame
+nova_tabela_trans <- rbind(top_classes, outros)
+
+# Copiar o dataframe original
+df_novo <- nova_tabela_trans
+
+# Filtrar as linhas que possuem 'Outros' como a origem da fonte de renda
+outros <- df_novo[df_novo$`Origem de outra fonte de renda` == "Outros", ]
+
+# Somar os valores das linhas 'Outros' para obter a soma total
+soma_outros <- colSums(outros[, c("Número de registros", "prop")])
+
+
+# Excluir as linhas 'Outros' do dataframe original
+df_novo <- df_novo[df_novo$`Origem de outra fonte de renda` != "Outros", ]
+
+nova_linha<-c("Origem de outra fonte de renda"="Outros","Zona"="Transição",soma_outros)
+
+# Adicionar a nova linha 'Outros (Agregado)' ao dataframe
+df_novo <- rbind(df_novo, nova_linha)
+
+ggplot(df_novo, aes(x = "", y = prop, fill = factor(`Origem de outra fonte de renda`))) +
   geom_bar(width = 1, stat = "identity") +
   coord_polar("y", start = 0) +
-  scale_fill_viridis_d(name = "Outras fontes de renda") +  # Using a color scale
+  scale_fill_viridis_d(name = "Fontes de renda") +  # Using a color scale
   theme_void() +  # Remove background, grid, numeric labels
   theme(
     legend.position = "right",  # Set legend position to right
@@ -647,17 +750,48 @@ ggplot(transicao_df, aes(x = "", y = prop, fill = factor(`Origem de outra fonte 
     legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
   ) +
   labs(
-    title = "Número de registros de outras fontes de renda na zona transição",
-    subtitle = "Número total de pescadores com outras fontes de renda = 5 de 14 (total)"
+    title = "Registros de outras fontes de renda na zona transição",
+    subtitle = "Número total de pescadores com outras fontes de renda = 20 de 44 (total)"
   )
 
 # Calculate proportions
 lacustre_df$prop <- lacustre_df$"Número de registros" / sum(lacustre_df$"Número de registros")
 
-ggplot(lacustre_df, aes(x = "", y = prop, fill = factor(`Origem de outra fonte de renda`))) +
+# Arrange the data frame in descending order based on 'Número de registros'
+nova_tabela_trans <- lacustre_df %>% arrange(desc(`Número de registros`))
+
+# Select the top 5 classes
+top_classes <- head(nova_tabela_trans, 5)
+
+# Summarize the remaining classes as 'Outros'
+outros <- nova_tabela_trans %>% slice(-(1:5)) %>% summarise(`Origem de outra fonte de renda` = "Outros","Zona"="Transição",
+                                                            `Número de registros` = sum(`Número de registros`),
+                                                            prop = sum(prop))
+
+# Combine the top classes and 'Outros' into a new data frame
+nova_tabela_trans <- rbind(top_classes, outros)
+
+# Copiar o dataframe original
+df_novo <- nova_tabela_trans
+
+# Filtrar as linhas que possuem 'Outros' como a origem da fonte de renda
+outros <- df_novo[df_novo$`Origem de outra fonte de renda` == "Outros", ]
+
+# Somar os valores das linhas 'Outros' para obter a soma total
+soma_outros <- colSums(outros[, c("Número de registros", "prop")])
+
+# Excluir as linhas 'Outros' do dataframe original
+df_novo <- df_novo[df_novo$`Origem de outra fonte de renda` != "Outros", ]
+
+nova_linha<-c("Origem de outra fonte de renda"="Outros","Zona"="Lacustre",soma_outros)
+
+# Adicionar a nova linha 'Outros (Agregado)' ao dataframe
+df_novo <- rbind(df_novo, nova_linha)
+
+ggplot(df_novo, aes(x = "", y = prop, fill = factor(`Origem de outra fonte de renda`))) +
   geom_bar(width = 1, stat = "identity") +
   coord_polar("y", start = 0) +
-  scale_fill_viridis_d(name = "Outras fontes de renda") +  # Using a color scale
+  scale_fill_viridis_d(name = "Fontes de renda") +  # Using a color scale
   theme_void() +  # Remove background, grid, numeric labels
   theme(
     legend.position = "right",  # Set legend position to right
@@ -667,13 +801,12 @@ ggplot(lacustre_df, aes(x = "", y = prop, fill = factor(`Origem de outra fonte d
     legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
   ) +
   labs(
-    title = "Número de registros de outras fontes de renda na zona lacustre",
-    subtitle = "Número total de pescadores com outras fontes de renda = 42 de 58 (total)"
+    title = "Registros de outras fontes de renda na zona lacustre",
+    subtitle = "Número total de pescadores com outras fontes de renda = 127 de 179 (total)"
   )
 
 ################
 #tempo de pesca
-# Assuming the date format is "year-day-month"
 # Assuming the date format is "year-day-month"
 anos_de_pesca <- aggregate(Seq ~ Nome.Completo+Há.quantos.anos.você.pesca.+Zona.de.Pesca, data=socio_geral, length)
 
@@ -688,16 +821,689 @@ zone_counts <- with(socio_geral, table(Zona.de.Pesca, anos_de_pesca))
 
 colnames(zone_counts) <- c("1-4","5-9","10-14","15-19","20-24","25-29","30-34","35-39","40+")
 
-
-# Estrutura etaria #####
+# tempo de pesca no reservatório #####
 ordered_aliMat<-t(as.matrix(rbind(zone_counts,total_counts)))
 colnames(ordered_aliMat) <- c("Fluvial","Lacustre", "Transição", "Geral")
 ordem <- c("Geral","Fluvial","Transição","Lacustre")
 ordered_aliMat <- ordered_aliMat[, ordem]
 par(mfrow=c(1,1), mar=c(4,6,1,1), oma=c(0,0,0,0))
-x1 <- barplot(ordered_aliMat, beside = TRUE, horiz = T, yaxt = "n", col = terrain.colors(10)[c(4:1)], width = 0.5)
+tick_positions <- seq(0, 60, by = 10)
+x1 <- barplot(ordered_aliMat, beside = TRUE, horiz = T, yaxt = "n", col = terrain.colors(10)[c(4:1)], width = 0.5,xlim=c(0, 60))
+axis(side = 1, at = tick_positions)
 mtext(side = 2, line = 3, at = colMeans(x1), text = colnames(ordered_aliMat), cex = 1.25, las = 3)
 mtext(side = 2, line = 4, at = mean(x1), text = "Tempo de pesca no reservatório", cex = 1.25, las = 3)
 axis(side = 2, at = x1, labels = rep(rownames(ordered_aliMat), 4),cex.axis = 0.7, cex = 0.7, las = 2)
 mtext("Número de pescadores", side = 1, line = 2, cex = 1.25)
 dev.off()
+
+######################
+# PARTES DE TABELAS MISTAS ####
+rm()
+socio_geral <- data.frame(read_xlsx("Cadastro_Socioeconomico_dos_Pescadores_2023.xlsx", sheet="0"))
+socio_geral <- subset(socio_geral, Ano.de.referência== "2023")
+socio_geral$Data.de.nascimento <-as.Date(socio_geral$Data.de.nascimento, format = "%d/%m/%Y") # Data em (mmm aaaa)
+socio_geral$Seq <- seq(nrow(socio_geral))
+
+anzol <- data.frame(read_xlsx("Cadastro_Socioeconomico_dos_Pescadores_2023.xlsx", sheet="2"))
+sum_quantidade <- aggregate(Quantidade ~ Parent.Row.ID, data = anzol, sum)
+
+merged_df <- merge(sum_quantidade, socio_geral, by.x = "Parent.Row.ID", by.y = "Row.ID", all.y = TRUE)
+
+merged_df <- merged_df[complete.cases(merged_df$Quantidade), ]
+
+#### number of anzois for zone
+anzois <- aggregate(Seq ~ Nome.Completo+Quantidade+Zona.de.Pesca, data=merged_df, length)
+
+sum_anzois <- aggregate(Quantidade ~ Zona.de.Pesca, data = anzois, sum)
+
+# Define custom levels
+custom_levels <- c("Fluvial", "Transição", "Lacustre")
+
+color <- c("#045e9a", "#da2420","#009241")
+
+ggplot(sum_anzois, aes(x = "", y = Quantidade, fill = factor(`Zona.de.Pesca`))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0) +
+  scale_fill_manual(values = color, name = "Zona") +  # Using a color scale
+  theme_void() +  # Remove background, grid, numeric labels
+  theme(
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  ) +
+  labs(
+    title = "Quantidade de anzóis por zona",
+    subtitle = "Número total de anzóis = 12.219"
+  )
+
+# Bin ages into age groups (every 10 years)
+merged_df$anzois_groups <- cut(merged_df$Quantidade, breaks = seq(0, max(merged_df$Quantidade) + 200, by = 200), right = FALSE)
+
+# Total count by age group
+total_counts <- table(merged_df$anzois_groups)
+
+# Count by age group for each zone
+zone_counts <- with(merged_df, table(Zona.de.Pesca, anzois_groups))
+
+colnames(zone_counts) <- c("-199","200-399","400-599","600-799","800-999","1000+")
+
+# tempo de pesca no reservatório #####
+ordered_aliMat<-t(as.matrix(rbind(zone_counts,total_counts)))
+colnames(ordered_aliMat) <- c("Fluvial","Lacustre", "Transição", "Geral")
+ordem <- c("Geral","Fluvial","Transição","Lacustre")
+ordered_aliMat <- ordered_aliMat[, ordem]
+par(mfrow=c(1,1), mar=c(4,6,1,1), oma=c(0,0,0,0))
+tick_positions <- seq(0, 60, by = 10)
+x1 <- barplot(ordered_aliMat, beside = TRUE, horiz = T, yaxt = "n", col = terrain.colors(10)[c(4:1)], width = 0.5,xlim=c(0, 25))
+axis(side = 1, at = tick_positions)
+mtext(side = 2, line = 4, at = colMeans(x1), text = colnames(ordered_aliMat), cex = 1.25, las = 3)
+mtext(side = 2, line = 5, at = mean(x1), text = "Número de anzóis", cex = 1.25, las = 3)
+axis(side = 2, at = x1, labels = rep(rownames(ordered_aliMat), 4),cex.axis = 0.7, cex = 0.7, las = 2)
+mtext("Número de pescadores", side = 1, line = 2, cex = 1.25)
+dev.off()
+
+# malhas das redes
+redes <- data.frame(read_xlsx("Cadastro_Socioeconomico_dos_Pescadores_2023.xlsx", sheet="1"))
+
+merged_df1 <- merge(redes, socio_geral, by.x = "Parent.Row.ID", by.y = "Row.ID", all.y = TRUE)
+
+sum_quantidade <- aggregate(Quantidade ~ Malha + Parent.Row.ID, data = merged_df1, sum)
+
+#write.xlsx(merged_df1, "redes.xlsx", rowNames = FALSE)
+
+merged_df <- merge(sum_quantidade, socio_geral, by.x = "Parent.Row.ID", by.y = "Row.ID", all.y = TRUE)
+
+merged_df <- subset(merged_df, !is.na(Quantidade))
+
+merged_df <- merged_df[complete.cases(merged_df$Quantidade), ]
+
+malhas <- aggregate(Seq ~  Malha+ Nome.Completo+Quantidade+Zona.de.Pesca, data=merged_df, length)
+
+# Bin ages into age groups (every 10 years)
+merged_df$malhas_groups <- cut(merged_df$Quantidade, breaks = seq(0, max(merged_df$Quantidade) + 1, by = 1), right = FALSE)
+
+# Aggregate the data based on 'Malha' and 'Zona.de.Pesca' columns
+agg_data <- aggregate(Quantidade ~ Malha , data = merged_df, sum)
+
+color <- c("#045e9a", "#da2420","#009241")
+
+# Calculate proportions
+agg_data$prop <- agg_data$"Quantidade" / sum(agg_data$"Quantidade")
+
+reordered_agg_data <- rbind(agg_data[12:13, ], agg_data[-(12:13), ])
+
+reordered_agg_data$Malha <- factor(reordered_agg_data$Malha, levels = reordered_agg_data$Malha)
+
+ggplot(reordered_agg_data, aes(x = Malha, y = Quantidade)) +
+  geom_bar(stat = "identity", fill = "black") +
+  labs(x = "Malhas de redes de pesca", y = "Quantidade", title = "") +
+  theme_minimal()+
+  theme(
+    panel.grid.major.x = element_blank(),  # Remove major gridlines for x-axis
+    panel.grid.minor.x = element_blank(),  # Remove minor gridlines for x-axis
+    #panel.grid.major.y = element_blank(),
+    panel.grid.major.y = element_line(color = "gray", size = 0.1),  # Keep major gridlines for y-axis
+    panel.grid.minor.y = element_blank(),  # Remove minor gridlines for y-axis
+    axis.line.x = element_line(color = "black", size = 1),  # X-axis line
+    axis.line.y = element_line(color = "black", size = 1),  # Y-axis line
+    axis.text.x = element_text(size = 20),  # Increase X-axis text size
+    axis.text.y = element_text(size = 20),
+    axis.title.x = element_text(size = 22),  # Increase X-axis label size
+    axis.title.y = element_text(size = 22),  # Increase Y-axis label size
+    legend.text = element_text(size = 20),   # Increase legend text size
+    legend.title = element_text(size = 22),   # Increase legend title size
+    legend.position = "right",  # Position of legend
+    legend.justification = "bottom")
+
+#fluvial
+# Bin ages into age groups (every 10 years)
+merged_df2 <- subset(merged_df, Zona.de.Pesca == "Fluvial")
+
+sum_quantidade <- aggregate(Quantidade ~ Malha + Parent.Row.ID, data = merged_df2 , sum)
+
+merged_df2 <- merge(sum_quantidade, socio_geral, by.x = "Parent.Row.ID", by.y = "Row.ID", all.y = TRUE)
+
+merged_df2 <- merged_df2[complete.cases(merged_df2$Quantidade), ]
+
+malhas <- aggregate(Seq ~  Malha+ Nome.Completo+Quantidade+Zona.de.Pesca, data=merged_df2, length)
+
+# Bin ages into age groups (every 10 years)
+merged_df2$malhas_groups <- cut(merged_df2$Quantidade, breaks = seq(0, max(merged_df2$Quantidade) + 1, by = 1), right = FALSE)
+
+# Aggregate the data based on 'Malha' and 'Zona.de.Pesca' columns
+agg_data <- aggregate(Quantidade ~ Malha , data = merged_df2, sum)
+
+reordered_agg_data <- rbind(agg_data[5, ], agg_data[-(5), ])
+
+reordered_agg_data$Malha <- factor(reordered_agg_data$Malha, levels = reordered_agg_data$Malha)
+
+ggplot(reordered_agg_data, aes(x = Malha, y = Quantidade)) +
+  geom_bar(stat = "identity", fill = "#045e9a") +
+  labs(x = "Malhas de redes de pesca", y = "Quantidade", title = "") +
+  theme_minimal()+
+  theme(
+    panel.grid.major.x = element_blank(),  # Remove major gridlines for x-axis
+    panel.grid.minor.x = element_blank(),  # Remove minor gridlines for x-axis
+    #panel.grid.major.y = element_blank(),
+    panel.grid.major.y = element_line(color = "gray", size = 0.1),  # Keep major gridlines for y-axis
+    panel.grid.minor.y = element_blank(),  # Remove minor gridlines for y-axis
+    axis.line.x = element_line(color = "black", size = 1),  # X-axis line
+    axis.line.y = element_line(color = "black", size = 1),  # Y-axis line
+    axis.text.x = element_text(size = 20),  # Increase X-axis text size
+    axis.text.y = element_text(size = 20),
+    axis.title.x = element_text(size = 22),  # Increase X-axis label size
+    axis.title.y = element_text(size = 22),  # Increase Y-axis label size
+    legend.text = element_text(size = 20),   # Increase legend text size
+    legend.title = element_text(size = 22),   # Increase legend title size
+    legend.position = "right",  # Position of legend
+    legend.justification = "bottom")
+
+#transição
+# Bin ages into age groups (every 10 years)
+merged_df3 <- subset(merged_df, Zona.de.Pesca == "Transição")
+
+sum_quantidade <- aggregate(Quantidade ~ Malha + Parent.Row.ID, data = merged_df3 , sum)
+
+merged_df3 <- merge(sum_quantidade, socio_geral, by.x = "Parent.Row.ID", by.y = "Row.ID", all.y = TRUE)
+
+merged_df3 <- merged_df3[complete.cases(merged_df3$Quantidade), ]
+
+malhas <- aggregate(Seq ~  Malha+ Nome.Completo+Quantidade+Zona.de.Pesca, data=merged_df3, length)
+
+# Bin ages into age groups (every 10 years)
+merged_df3$malhas_groups <- cut(merged_df3$Quantidade, breaks = seq(0, max(merged_df3$Quantidade) + 1, by = 1), right = FALSE)
+
+# Aggregate the data based on 'Malha' and 'Zona.de.Pesca' columns
+agg_data <- aggregate(Quantidade ~ Malha , data = merged_df3, sum)
+
+reordered_agg_data <- rbind(agg_data[10:11, ], agg_data[-(10:11), ])
+
+reordered_agg_data$Malha <- factor(reordered_agg_data$Malha, levels = reordered_agg_data$Malha)
+
+ggplot(reordered_agg_data, aes(x = Malha, y = Quantidade)) +
+  geom_bar(stat = "identity", fill = "#da2420") +
+  labs(x = "Malhas de redes de pesca", y = "Quantidade", title = "") +
+  theme_minimal()+
+  theme(
+    panel.grid.major.x = element_blank(),  # Remove major gridlines for x-axis
+    panel.grid.minor.x = element_blank(),  # Remove minor gridlines for x-axis
+    #panel.grid.major.y = element_blank(),
+    panel.grid.major.y = element_line(color = "gray", size = 0.1),  # Keep major gridlines for y-axis
+    panel.grid.minor.y = element_blank(),  # Remove minor gridlines for y-axis
+    axis.line.x = element_line(color = "black", size = 1),  # X-axis line
+    axis.line.y = element_line(color = "black", size = 1),  # Y-axis line
+    axis.text.x = element_text(size = 20),  # Increase X-axis text size
+    axis.text.y = element_text(size = 20),
+    axis.title.x = element_text(size = 22),  # Increase X-axis label size
+    axis.title.y = element_text(size = 22),  # Increase Y-axis label size
+    legend.text = element_text(size = 20),   # Increase legend text size
+    legend.title = element_text(size = 22),   # Increase legend title size
+    legend.position = "right",  # Position of legend
+    legend.justification = "bottom")
+
+#lacustre
+# Bin ages into age groups (every 10 years)
+merged_df4 <- subset(merged_df, Zona.de.Pesca == "Lacustre")
+
+sum_quantidade <- aggregate(Quantidade ~ Malha + Parent.Row.ID, data = merged_df4 , sum)
+
+merged_df4 <- merge(sum_quantidade, socio_geral, by.x = "Parent.Row.ID", by.y = "Row.ID", all.y = TRUE)
+
+merged_df4 <- merged_df4[complete.cases(merged_df4$Quantidade), ]
+
+malhas <- aggregate(Seq ~  Malha+ Nome.Completo+Quantidade+Zona.de.Pesca, data=merged_df4, length)
+
+# Bin ages into age groups (every 10 years)
+merged_df4$malhas_groups <- cut(merged_df4$Quantidade, breaks = seq(0, max(merged_df4$Quantidade) + 1, by = 1), right = FALSE)
+
+# Aggregate the data based on 'Malha' and 'Zona.de.Pesca' columns
+agg_data <- aggregate(Quantidade ~ Malha , data = merged_df4, sum)
+
+reordered_agg_data <- rbind(agg_data[9:10, ], agg_data[-(9:10), ])
+
+reordered_agg_data$Malha <- factor(reordered_agg_data$Malha, levels = reordered_agg_data$Malha)
+
+ggplot(reordered_agg_data, aes(x = Malha, y = Quantidade)) +
+  geom_bar(stat = "identity", fill = "#009241") +
+  labs(x = "Malhas de redes de pesca", y = "Quantidade", title = "") +
+  theme_minimal()+
+  theme(
+    panel.grid.major.x = element_blank(),  # Remove major gridlines for x-axis
+    panel.grid.minor.x = element_blank(),  # Remove minor gridlines for x-axis
+    #panel.grid.major.y = element_blank(),
+    panel.grid.major.y = element_line(color = "gray", size = 0.1),  # Keep major gridlines for y-axis
+    panel.grid.minor.y = element_blank(),  # Remove minor gridlines for y-axis
+    axis.line.x = element_line(color = "black", size = 1),  # X-axis line
+    axis.line.y = element_line(color = "black", size = 1),  # Y-axis line
+    axis.text.x = element_text(size = 20),  # Increase X-axis text size
+    axis.text.y = element_text(size = 20),
+    axis.title.x = element_text(size = 22),  # Increase X-axis label size
+    axis.title.y = element_text(size = 22),  # Increase Y-axis label size
+    legend.text = element_text(size = 20),   # Increase legend text size
+    legend.title = element_text(size = 22),   # Increase legend title size
+    legend.position = "right",  # Position of legend
+    legend.justification = "bottom")
+#######
+###################
+##############
+
+# malhas das redes
+redes <- data.frame(read_xlsx("Cadastro_Socioeconomico_dos_Pescadores_2023.xlsx", sheet="1"))
+redes$m2 <- redes$Comprimento..m.*redes$Altura..m.*redes$Quantidade
+
+sum_m2 <- aggregate(m2 ~ Parent.Row.ID, data = redes, sum)
+
+merged_df <- merge(sum_m2, socio_geral, by.x = "Parent.Row.ID", by.y = "Row.ID", all.y = TRUE)
+
+merged_df <- merged_df[complete.cases(merged_df$m2), ]
+
+malhas <- aggregate(Seq ~  m2+ Nome.Completo+Zona.de.Pesca, data=merged_df, length)
+
+# Create a new category for overall data
+malhas$Geral <- "Geral"
+
+# Reorder Zona.de.Pesca levels as desired
+malhas$Zona.de.Pesca <- factor(malhas$Zona.de.Pesca, levels = c("Fluvial", "Transição", "Lacustre"))
+
+# Create a boxplot for each category of Zona.de.Pesca
+boxplot_zona <- ggplot(data = malhas) +
+  geom_boxplot(aes(x = Zona.de.Pesca, y = m2, fill = Zona.de.Pesca)) +
+  labs(title = "Dados por zonas",
+       x = "",
+       y = "") +
+  theme_minimal() +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=0.5, size = 14),
+        axis.text.y = element_text(face = "italic", size = 14),
+        panel.grid.major.x = element_blank(),  # Remove major gridlines for x-axis
+        panel.grid.minor.x = element_blank(),  # Remove minor gridlines for x-axis
+        panel.grid.major.y = element_blank(),  # Keep major gridlines for y-axis
+        panel.grid.minor.y = element_blank(),  # Remove minor gridlines for y-axis
+        axis.line.x = element_line(color = "black", size = 1),  # X-axis line
+        axis.line.y = element_line(color = "black", size = 1),   # Y-axis line
+        axis.title.x = element_text(size = 22),  # Increase X-axis label size
+        axis.title.y = element_text(size = 22),  # Increase Y-axis label size
+        legend.text = element_text(size = 20),   # Increase legend text size
+        legend.title = element_text(size = 22),   # Increase legend title size
+        legend.position = "none")+  # Remove legend
+  scale_fill_manual(values = c("#045e9a", "#da2420","#009241")) # Adjust colors as needed
+
+
+# Create a boxplot for all data together
+boxplot_all <- ggplot(data = malhas) +
+  geom_boxplot(aes(x = "Geral", y = m2, fill = Geral)) +
+  labs(title = "Dados gerais",
+       x = "",
+       y = "Metros quadrados de rede") +
+  theme_minimal() +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=0.5, size = 14),
+        axis.text.y = element_text(face = "italic", size = 14),
+        panel.grid.major.x = element_blank(),  # Remove major gridlines for x-axis
+        panel.grid.minor.x = element_blank(),  # Remove minor gridlines for x-axis
+        panel.grid.major.y = element_blank(),  # Keep major gridlines for y-axis
+        panel.grid.minor.y = element_blank(),  # Remove minor gridlines for y-axis
+        axis.line.x = element_line(color = "black", size = 1),  # X-axis line
+        axis.line.y = element_line(color = "black", size = 1),  # Y-axis line
+        axis.title.x = element_text(size = 22),  # Increase X-axis label size
+        axis.title.y = element_text(size = 22),  # Increase Y-axis label size
+        legend.text = element_text(size = 20),   # Increase legend text size
+        legend.title = element_text(size = 22),   # Increase legend title size
+        legend.position = "none")+  # Remove legend
+  scale_fill_manual(values = "black")  # Adjust colors as needed
+
+# Plot both boxplots side by side
+gridExtra::grid.arrange(boxplot_all, boxplot_zona, ncol = 2)
+
+
+#tipo de barco
+barco <- aggregate(Seq ~ Nome.Completo+Material.do.Barco, data=socio_geral, length)
+barco1 <- aggregate(Seq ~ Material.do.Barco, data=barco, length)
+
+color <- c("#045e9a", "#da2420","#009241")
+
+# Criar um fator com a ordem desejada
+ordem <- c("Alumínio", "Fibra", "Latão","Madeira","Outro")
+barco1$Material.do.Barco <- factor(barco1$Material.do.Barco, levels = ordem)
+
+barco1$Seq / sum(barco1$Seq)
+
+ggplot(barco1, aes(x = "", y = Seq, fill = factor(`Material.do.Barco`))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0) +
+  scale_fill_viridis_d(name = "Fontes de renda") +  # Using a color scale
+  theme_void() +  # Remove background, grid, numeric labels
+  theme(
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  ) +
+  labs(
+    title = "Tipos de embarcações",
+    subtitle = "Número total de embarcações = 241"
+  )
+
+
+#embarcações por zona
+barco <- aggregate(Seq ~ Nome.Completo+Material.do.Barco+Zona.de.Pesca, data=socio_geral, length)
+barco1 <- aggregate(Seq ~ Material.do.Barco+Zona.de.Pesca, data=barco, length)
+
+fluvial_df <- barco1[barco1$Zona.de.Pesca == "Fluvial", ]
+transicao_df <- barco1[barco1$Zona.de.Pesca == "Transição", ]
+lacustre_df <- barco1[barco1$Zona.de.Pesca == "Lacustre", ]
+
+# Calculate proportions
+fluvial_df$prop <- fluvial_df$"Seq" / sum(fluvial_df$"Seq")
+
+ggplot(fluvial_df, aes(x = "", y = prop, fill = factor(`Material.do.Barco`))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0) +
+  scale_fill_viridis_d(name = "Tipos de embarcações") +  # Using a color scale
+  theme_void() +  # Remove background, grid, numeric labels
+  theme(
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  ) +
+  labs(
+    title = "Tipos de embarcações na zona fluvial",
+    subtitle = "Número total de embarcações = 18"
+  )
+
+# Calculate proportions
+transicao_df$prop <- transicao_df$"Seq" / sum(transicao_df$"Seq")
+
+ggplot(transicao_df, aes(x = "", y = prop, fill = factor(`Material.do.Barco`))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0) +
+  scale_fill_viridis_d(name = "Tipos de embarcações") +  # Using a color scale
+  theme_void() +  # Remove background, grid, numeric labels
+  theme(
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  ) +
+  labs(
+    title = "Tipos de embarcações na zona transição",
+    subtitle = "Número total de embarcações = 44"
+  )
+
+# Calculate proportions
+lacustre_df$prop <- lacustre_df$"Seq" / sum(lacustre_df$"Seq")
+
+ggplot(lacustre_df, aes(x = "", y = prop, fill = factor(`Material.do.Barco`))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0) +
+  scale_fill_viridis_d(name = "Tipos de embarcações") +  # Using a color scale
+  theme_void() +  # Remove background, grid, numeric labels
+  theme(
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  ) +
+  labs(
+    title = "Tipos de embarcações na zona lacustre",
+    subtitle = "Número total de embarcações = 179"
+  )
+
+#tipo de motor
+barco <- aggregate(Seq ~ Nome.Completo+Propulsão, data=socio_geral, length)
+barco1 <- aggregate(Seq ~ Propulsão, data=barco, length)
+
+color <- c("#045e9a", "#da2420","#009241")
+
+# Criar um fator com a ordem desejada
+ordem <- c("Cascudo", "Centro", "Popa","Rabeta","Remo","Outro")
+barco1$Propulsão <- factor(barco1$Propulsão, levels = ordem)
+
+barco1$Seq / sum(barco1$Seq)
+
+ggplot(barco1, aes(x = "", y = Seq, fill = factor(`Propulsão`))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0) +
+  scale_fill_viridis_d(name = "Fontes de renda") +  # Using a color scale
+  theme_void() +  # Remove background, grid, numeric labels
+  theme(
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  ) +
+  labs(
+    title = "Tipos de motores",
+    subtitle = "Número total de motores = 241"
+  )
+
+
+#motor por zona
+barco <- aggregate(Seq ~ Nome.Completo+Propulsão+Zona.de.Pesca, data=socio_geral, length)
+barco1 <- aggregate(Seq ~ Propulsão+Zona.de.Pesca, data=barco, length)
+
+fluvial_df <- barco1[barco1$Zona.de.Pesca == "Fluvial", ]
+transicao_df <- barco1[barco1$Zona.de.Pesca == "Transição", ]
+lacustre_df <- barco1[barco1$Zona.de.Pesca == "Lacustre", ]
+
+# Calculate proportions
+fluvial_df$prop <- fluvial_df$"Seq" / sum(fluvial_df$"Seq")
+
+ggplot(fluvial_df, aes(x = "", y = prop, fill = factor(`Propulsão`))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0) +
+  scale_fill_viridis_d(name = "Tipos de motores") +  # Using a color scale
+  theme_void() +  # Remove background, grid, numeric labels
+  theme(
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  ) +
+  labs(
+    title = "Tipos de motores na zona fluvial",
+    subtitle = "Número total de motores = 18"
+  )
+
+# Calculate proportions
+transicao_df$prop <- transicao_df$"Seq" / sum(transicao_df$"Seq")
+
+ggplot(transicao_df, aes(x = "", y = prop, fill = factor(`Propulsão`))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0) +
+  scale_fill_viridis_d(name = "Tipos de motores") +  # Using a color scale
+  theme_void() +  # Remove background, grid, numeric labels
+  theme(
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  ) +
+  labs(
+    title = "Tipos de motores na zona transição",
+    subtitle = "Número total de motores = 44"
+  )
+
+# Calculate proportions
+lacustre_df$prop <- lacustre_df$"Seq" / sum(lacustre_df$"Seq")
+
+ggplot(lacustre_df, aes(x = "", y = prop, fill = factor(`Propulsão`))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0) +
+  scale_fill_viridis_d(name = "Tipos de motores") +  # Using a color scale
+  theme_void() +  # Remove background, grid, numeric labels
+  theme(
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  ) +
+  labs(
+    title = "Tipos de motores na zona lacustre",
+    subtitle = "Número total de motores = 179"
+  )
+
+##############
+# malhas e anzois comparativos
+redes <- data.frame(read_xlsx("Cadastro_Socioeconomico_dos_Pescadores_2023.xlsx", sheet="1"))
+anzois <- data.frame(read_xlsx("Cadastro_Socioeconomico_dos_Pescadores_2023.xlsx", sheet="2"))
+
+# Merge sheet3 with sheet1 based on Parent.Row.ID
+merged_1_3 <- merge(socio_geral, redes, by.x = "Row.ID", by.y = "Parent.Row.ID", all.x = TRUE)
+
+# Merge sheet3 with sheet2 based on Parent.Row.ID
+merged_2_3 <- merge(socio_geral, anzois, by.x = "Row.ID", by.y = "Parent.Row.ID", all.x = TRUE)
+
+selected_columns <- c("Row.ID","Nome.Completo","Zona.de.Pesca","OBJECTID.y", "Malha", "Comprimento..m.")
+
+# Create a new data frame with only the selected columns
+new_merged_1_3 <- merged_1_3[selected_columns]
+
+selected_columns2 <- c("Row.ID","Nome.Completo","Zona.de.Pesca","OBJECTID.y","Tamanho.do.Anzol", "Quantidade")
+
+new_merged_2_3 <- merged_2_3[selected_columns2]
+
+# Create a new data frame with unique values of Nome.Completo
+unique_names <- unique(new_merged_1_3$Nome.Completo)
+new_df <- data.frame(Nome.Completo = unique_names)
+
+# Copy Zona.de.Pesca from original_df to new_df
+new_df$Zona.de.Pesca <- new_merged_1_3$Zona.de.Pesca[match(unique_names, new_merged_1_3$Nome.Completo)]
+
+# Add Malha column with values based on the presence of Malha
+new_df$Malha <- ifelse(!is.na(new_merged_1_3$Malha[match(unique_names, new_merged_1_3$Nome.Completo)]), 1, NA)
+
+# Create a new data frame with unique values of Nome.Completo
+unique_names2 <- unique(new_merged_2_3$Nome.Completo)
+new_df2 <- data.frame(Nome.Completo = unique_names2)
+
+# Copy Zona.de.Pesca from original_df to new_df
+new_df2$Zona.de.Pesca <- new_merged_2_3$Zona.de.Pesca[match(unique_names2, new_merged_2_3$Nome.Completo)]
+
+# Add Malha column with values based on the presence of Malha
+new_df2$QuantidadeAnzois <- ifelse(!is.na(new_merged_2_3$Quantidade[match(unique_names, new_merged_2_3$Nome.Completo)]), 1, NA)
+
+new_df3<-cbind(new_df,new_df2[,3])
+
+col_names<-c("Nome Completo", "Zona", "Redes", "Anzóis")
+
+colnames(new_df3)<-col_names
+
+# Count the number of occurrences of 1 in the 'Redes' column
+num_ones_redes <- sum(new_df3$Redes == 1, na.rm = TRUE)
+
+# Calculate the proportion of 1 in redes compared to the total number of rows
+proportion_redes <- num_ones_redes / nrow(new_df3)
+
+# Count the number of occurrences of 1 in the 'Redes' column
+num_ones_anzol <- sum(new_df3$Anzóis == 1, na.rm = TRUE)
+
+# Calculate the proportion of 1 in redes compared to the total number of rows
+proportion_anzol <- num_ones_anzol / nrow(new_df3)
+
+new_df3$Redes[is.na(new_df3$Redes)] <- 0
+new_df3$Anzóis[is.na(new_df3$Anzóis)] <- 0
+
+# Aggregate the count of '1' in 'Redes' column by 'Zona.de.Pesca'
+counts <- aggregate(Redes ~ Zona, data = new_df3, FUN = function(x) sum(x == 1, na.rm = TRUE))
+
+# Calculate the total number of rows for each level of 'Zona.de.Pesca'
+total_rows <- aggregate(Redes ~ Zona, data = new_df3, FUN = function(x) sum(x == 0, na.rm = TRUE))
+
+# Merge the two data frames by the 'Zona' column
+merged_redes <- merge(counts, total_rows, by = "Zona", suffixes = c("Presença", "Ausência"))
+
+# Sum the 'Redes' columns from both sheets
+merged_redes$RedesTotal <- merged_counts$RedesPresença + merged_counts$RedesAusência
+
+# Aggregate the count of '1' in 'Redes' column by 'Zona.de.Pesca'
+counts <- aggregate(Anzóis ~ Zona, data = new_df3, FUN = function(x) sum(x == 1, na.rm = TRUE))
+
+# Calculate the total number of rows for each level of 'Zona.de.Pesca'
+total_rows <- aggregate(Anzóis ~ Zona, data = new_df3, FUN = function(x) sum(x == 0, na.rm = TRUE))
+
+# Merge the two data frames by the 'Zona' column
+merged_anzois <- merge(counts, total_rows, by = "Zona", suffixes = c("Presença", "Ausência"))
+
+# Sum the 'Redes' columns from both sheets
+merged_anzois$AnzóisTotal <- merged_anzois$AnzóisPresença + merged_anzois$AnzóisAusência
+
+# Sum each row for merged_anzois
+merged_anzois_total <- merged_anzois %>%
+  summarise(
+    Zona = "Geral",
+    AnzóisPresença = sum(AnzóisPresença),
+    AnzóisAusência = sum(AnzóisAusência),
+    AnzóisTotal = sum(AnzóisTotal)
+  )
+
+# Sum each row for merged_redes
+merged_redes_total <- merged_redes %>%
+  summarise(
+    Zona = "Geral",
+    RedesPresença = sum(RedesPresença),
+    RedesAusência = sum(RedesAusência),
+    RedesTotal = sum(RedesTotal)
+  )
+
+merged_anzois<- rbind(merged_anzois,merged_anzois_total)
+merged_redes<- rbind(merged_redes,merged_redes_total)
+
+
+merged_anzois<-merged_anzois %>%
+    mutate(
+      Presença_ratio = merged_anzois$AnzóisPresença / merged_anzois$AnzóisTotal,
+      Ausência_ratio = merged_anzois$AnzóisAusência / merged_anzois$AnzóisTotal)
+
+merged_redes<-merged_redes %>%
+  mutate(
+    Presença_ratio = merged_redes$RedesPresença / merged_redes$RedesTotal,
+    Ausência_ratio = merged_redes$RedesAusência / merged_redes$RedesTotal)
+
+# Rename columns in merged_anzois and merged_redes to match each other
+names(merged_anzois) <- c("Zona", "Presença", "Ausência", "Total", "Presença_ratio", "Ausência_ratio")
+names(merged_redes) <- c("Zona", "Presença", "Ausência", "Total", "Presença_ratio", "Ausência_ratio")
+
+# Combine the data frames
+combined_data <- rbind(
+  transform(merged_anzois, Tipo = "Anzois"),
+  transform(merged_redes, Tipo = "Redes")
+)
+
+# Reorder levels of "Zona" factor
+combined_data$Zona <- factor(combined_data$Zona, levels = c("Geral", "Fluvial", "Transição", "Lacustre"))
+
+write.xlsx(combined_data, "Anzóis e redes.xlsx", rowNames = FALSE)
+
+# Create custom label function for Y-axis
+percent_labels <- function(x) paste0(format(x * 100), "%")
+
+# Create the bar plot
+# Create the bar plot
+ggplot(combined_data, aes(x = "", y = Presença_ratio, fill = Tipo)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Uso comparativo de apetrechos de pesca",
+       y = "Porcentagem de uso de apetrechos",
+       fill = "") +
+  facet_wrap(~Zona, scales = "free_x") +  # Remove "Zona" from x-axis labels
+  theme_minimal() +
+  scale_y_continuous(labels = percent_labels, limits = c(0, 1)) +
+  scale_fill_manual(values = c("Anzois" = "black", "Redes" = "gray")) +
+  theme(axis.title.x = element_blank(),
+        legend.position = "right",  # Set legend position to right
+        legend.direction = "vertical",  # Set legend direction to vertical
+        legend.justification = "bottom",  # Adjust legend justification
+        legend.box.just = "right",  # Adjust legend box justification
+        legend.margin = margin(t = 0, r = 0, b = 0, l = -10),
+        axis.line.y = element_line(color = "black"))  # Add line over y-axis
