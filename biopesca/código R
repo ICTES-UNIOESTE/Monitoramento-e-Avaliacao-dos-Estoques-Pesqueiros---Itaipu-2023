@@ -6,7 +6,7 @@ library(vegan)
 library(tidyr)
 library(dplyr)
 library(ggplot2)
-BioAnual23 <- data.frame(read_xlsx("BiopescaAnual23.xlsx", sheet="Biopesca"))
+BioAnual23 <- data.frame(read_xlsx("BiopescaAnual23_3.0.xlsx", sheet="Biopesca"))
 Ord <- levels(factor(BioAnual23$Ordem))
 Fam <- levels(factor(BioAnual23$Familia))
 Spp <- levels(factor(BioAnual23$Genero))
@@ -714,7 +714,7 @@ for(i in 1:length(Spp)){
 TabParametros
 TabParametros[!is.finite(TabParametros)] <- NA
 # Define the file path where you want to save the Excel file
-file_path <- "C:/Users/lg_ri/Dropbox/Postdoc/UNIOESTE/Relatórios Itaipu/R biopesca/Parâmetros espécies.xlsx"  # Specify your desired file path and name
+file_path <- "C:/Users/lg_ri/Dropbox/Postdoc/UNIOESTE/Relatórios Itaipu/R biopesca/Parâmetros espécies_new.xlsx"  # Specify your desired file path and name
 TabParametros<-as.data.frame(TabParametros)
 # Save the dataframe to an Excel file
 write.xlsx(TabParametros, file_path, rowNames = TRUE)
