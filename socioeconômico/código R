@@ -355,7 +355,7 @@ ggplot(lacustre_df, aes(x = "", y = prop, fill = factor(`Número de dependentes`
     legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
   ) +
   labs(
-    title = "Dependentes na zona lacustre por proporção de pescadores",
+    title = "Dependentes na zona lacustre",
     subtitle = "Número total de registros de pescadores = 179"
   )
 
@@ -1106,6 +1106,18 @@ malhas$Geral <- "Geral"
 
 # Reorder Zona.de.Pesca levels as desired
 malhas$Zona.de.Pesca <- factor(malhas$Zona.de.Pesca, levels = c("Fluvial", "Transição", "Lacustre"))
+
+# Sum of m2 for all rows
+total_m2 <- sum(malhas$m2)
+
+# Sum of m2 for each class of Zona.de.Pesca
+sum_by_zona <- aggregate(m2 ~ Zona.de.Pesca, data = malhas, sum)
+
+sum_by_zona[4,2]<-total_m2
+sum_by_zona$Zona.de.Pesca <- factor(sum_by_zona$Zona.de.Pesca, levels = c(levels(sum_by_zona$Zona.de.Pesca), "Geral"))
+sum_by_zona$Zona.de.Pesca[is.na(sum_by_zona$Zona.de.Pesca)] <- "Geral"
+
+write.xlsx(sum_by_zona, file = "tamanho total de redes.xlsx")
 
 # Create a boxplot for each category of Zona.de.Pesca
 boxplot_zona <- ggplot(data = malhas) +
