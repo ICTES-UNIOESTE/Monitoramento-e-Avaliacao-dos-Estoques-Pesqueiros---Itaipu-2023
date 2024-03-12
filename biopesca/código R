@@ -27,9 +27,26 @@ tapply(Preco$Preço,interaction(Preco$Zona,Preco$Genero), mean)
 tapply(Preco$Preço,interaction(Preco$Zona,Preco$Genero), sd)
 names(BioAnual23)
 
+# Define a vector of names to be replaced
+names_to_replace <- c("C. kelberi", "C. piquiti","Cichla sp.","G. iporangensis","G. sveni","S. setepele","H. mbigua","Hoplias sp.","Hoplias sp. 2","M. macrocephalus",
+                      "P. corruscans","P. granulosus","P. lineatus","P. pirinampu","P. squamosissimus","S. setepele")
+
+# Define corresponding replacement names
+replacement_names <- c("Tucunaré", "Tucunaré","Tucunaré","Cará","Cará","Cará","Traíra","Traíra","Traíra","Piavuçu","Pintado","Armado","Curimba","Barbado",
+                       "Corvina","Cará")
+
+# Substitute names in Genero column
+Preco$Genero <- ifelse(Preco$Genero %in% names_to_replace,
+                                 replacement_names[match(Preco$Genero, names_to_replace)],
+                       Preco$Genero)
+
+# Filter out lines where Genero is not in the list of replacement names
+Preco <- Preco[Preco$Genero %in% replacement_names, ]
+
 # Overall summary data frame
 overall_summary <- aggregate(Preço ~ Genero, data = Preco, 
                              FUN = function(x) c(mean = mean(x), sd = sd(x)))
+
 
 # Create a new column indicating Zona as "Geral" for overall summary data
 overall_summary$Zona <- "Geral"
@@ -747,7 +764,7 @@ for(i in 1:length(Spp)){
       parametros=cbind(Resumo$coefficients[,1],confint(WT_LT))
       TabParametros[i, 7] <- parametros[2,2]
       TabParametros[i, 8] <- parametros[2,3]
-      }
+    }
     
     gender_counts <- BioAnual23$Sexo[BioAnual23$Genero == Spp[i]]
     gender_counts <- na.omit(gender_counts)
@@ -782,8 +799,8 @@ repMat<-t(as.matrix(rbind(repL,repT,repF,repG)))
 colnames(repMat) <- c("Lacustre", "Transição", "Fluvial", "Geral")
 round(decostand(repMat, method="total", MARGIN = 2)*100,2)
 #jpeg(filename = "Res5_Reprod.jpeg",
- #    width = 18, height = 13, units = "cm", pointsize = 12,
-  #   quality = 100, res=300)
+#    width = 18, height = 13, units = "cm", pointsize = 12,
+#   quality = 100, res=300)
 par(mfrow=c(1,1), mar=c(4,6,1,1), oma=c(0,0,0,0))
 x1<-barplot(repMat, beside=TRUE, horiz=T, yaxt="n", col=heat.colors(10)[c(3:7)])
 mtext(side=2, line=2.5, at=colMeans(x1), text = colnames(repMat), cex=1.25,las=3)
@@ -834,7 +851,7 @@ for (gen in generos) {
     RPD_counts[i] <- sum(month_data$Estagio == "RPD", na.rm = TRUE)
     not_RPD_counts[i] <- sum(month_data$Estagio != "RPD" & month_data$Estagio !="IMT", na.rm = TRUE)
   }
-
+  
   # Calculate proportions
   total_counts <- RPD_counts + not_RPD_counts
   RPD_proportions <- RPD_counts / total_counts
@@ -875,7 +892,7 @@ for (i in seq_along(unique_generos)) {
   
   # Identify matching columns between maduros_prop[i,] and genero_data
   matching_cols <- intersect(colnames(maduros_prop), genero_data$Month)
-
+  
   maduros_prop[i, matching_cols] <- genero_data[match(matching_cols, genero_data$Month), "RPD_prop"]
 }
 
