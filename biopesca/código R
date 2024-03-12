@@ -29,11 +29,11 @@ names(BioAnual23)
 
 # Define a vector of names to be replaced
 names_to_replace <- c("C. kelberi", "C. piquiti","Cichla sp.","G. iporangensis","G. sveni","S. setepele","H. mbigua","Hoplias sp.","Hoplias sp. 2","M. macrocephalus",
-                      "P. corruscans","P. granulosus","P. lineatus","P. pirinampu","P. squamosissimus","S. setepele")
+                      "P. corruscans","P. granulosus","P. lineatus","P. pirinampu","P. squamosissimus","S. setepele","H. oremaculatus")
 
 # Define corresponding replacement names
 replacement_names <- c("Tucunaré", "Tucunaré","Tucunaré","Cará","Cará","Cará","Traíra","Traíra","Traíra","Piavuçu","Pintado","Armado","Curimba","Barbado",
-                       "Corvina","Cará")
+                       "Corvina","Cará","Sardela")
 
 # Substitute names in Genero column
 Preco$Genero <- ifelse(Preco$Genero %in% names_to_replace,
