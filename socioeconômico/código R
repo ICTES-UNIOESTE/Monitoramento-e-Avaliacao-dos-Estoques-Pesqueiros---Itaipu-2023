@@ -621,7 +621,7 @@ nova_tabela_geral <- nova_tabela %>%
 
 nova_tabela_geral<-as.data.frame(nova_tabela_geral)
 
-colnames(nova_tabela_geral)<-c("Origem de outra fonte de renda","Número de registros")
+colnames(nova_tabela_geral)<-c("Outra fonte de renda","Número de registros")
 
 # Calculate proportions
 nova_tabela_geral$prop <- nova_tabela_geral$"Número de registros" / sum(nova_tabela_geral$"Número de registros")
@@ -630,39 +630,39 @@ nova_tabela_geral$prop <- nova_tabela_geral$"Número de registros" / sum(nova_ta
 nova_tabela_geral <- nova_tabela_geral %>% arrange(desc(`Número de registros`))
 
 # Select the top 5 classes
-top_classes <- head(nova_tabela_geral, 5)
+#top_classes <- head(nova_tabela_geral, 7)
 
 # Summarize the remaining classes as 'Outros'
-outros <- nova_tabela_geral %>% slice(-(1:5)) %>% summarise(`Origem de outra fonte de renda` = "Outros",
-                                                            `Número de registros` = sum(`Número de registros`),
-                                                            prop = sum(prop))
+#outros <- nova_tabela_geral %>% slice(-(1:8)) %>% summarise(`Origem de outra fonte de renda` = "Outros",
+ #                                                           `Número de registros` = sum(`Número de registros`),
+  #                                                          prop = sum(prop))
 
 # Combine the top classes and 'Outros' into a new data frame
-nova_tabela_geral <- rbind(top_classes, outros)
+#nova_tabela_geral <- rbind(top_classes, outros)
 
 # Copiar o dataframe original
 df_novo <- nova_tabela_geral
 
 # Filtrar as linhas que possuem 'Outros' como a origem da fonte de renda
-outros <- df_novo[df_novo$`Origem de outra fonte de renda` == "Outros", ]
+#outros <- df_novo[df_novo$`Origem de outra fonte de renda` == "Outros", ]
 
 # Somar os valores das linhas 'Outros' para obter a soma total
-soma_outros <- colSums(outros[, c("Número de registros", "prop")])
+#soma_outros <- colSums(outros[, c("Número de registros", "prop")])
 
 
 # Excluir as linhas 'Outros' do dataframe original
-df_novo <- df_novo[df_novo$`Origem de outra fonte de renda` != "Outros", ]
+#df_novo <- df_novo[df_novo$`Origem de outra fonte de renda` != "Outros", ]
 
-nova_linha<-c("Origem de outra fonte de renda"="Outros",soma_outros)
+#nova_linha<-c("Origem de outra fonte de renda"="Outros",soma_outros)
 
 # Adicionar a nova linha 'Outros (Agregado)' ao dataframe
-df_novo <- rbind(df_novo, nova_linha)
+#df_novo <- rbind(df_novo, nova_linha)
 
 
-ggplot(df_novo, aes(x = "", y = prop, fill = factor(`Origem de outra fonte de renda`))) +
+ggplot(df_novo, aes(x = "", y = prop, fill = factor(`Outra fonte de renda`))) +
   geom_bar(width = 1, stat = "identity") +
   coord_polar("y", start = 0) +
-  scale_fill_viridis_d(name = "Fontes de renda") +  # Using a color scale
+  scale_fill_viridis_d(name = "Atividades") +  # Using a color scale
   theme_void() +  # Remove background, grid, numeric labels
   theme(
     legend.position = "right",  # Set legend position to right
@@ -672,11 +672,11 @@ ggplot(df_novo, aes(x = "", y = prop, fill = factor(`Origem de outra fonte de re
     legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
   ) +
   labs(
-    title = "Número de registros de outras fontes de renda",
-    subtitle = "Número total de pescadores com outras fontes de renda = 152 de 241 (total)"
+    title = "Registros de outras fontes de renda",
+    subtitle = "Número total de pescadores com outras atividades = 151 de 241 (total)"
   )
 
-colnames(nova_tabela)<-c("Origem de outra fonte de renda","Zona","Número de registros")
+colnames(nova_tabela)<-c("Outra fonte de renda","Zona","Número de registros")
 
 fluvial_df <- nova_tabela[nova_tabela$Zona == "Fluvial", ]    #6
 transicao_df <- nova_tabela[nova_tabela$Zona == "Transição", ] #8
@@ -685,10 +685,10 @@ lacustre_df <- nova_tabela[nova_tabela$Zona == "Lacustre", ]  #40
 # Calculate proportions
 fluvial_df$prop <- fluvial_df$"Número de registros" / sum(fluvial_df$"Número de registros")
 
-ggplot(fluvial_df, aes(x = "", y = prop, fill = factor(`Origem de outra fonte de renda`))) +
+ggplot(fluvial_df, aes(x = "", y = prop, fill = factor(`Outra fonte de renda`))) +
   geom_bar(width = 1, stat = "identity") +
   coord_polar("y", start = 0) +
-  scale_fill_viridis_d(name = "Fontes de renda") +  # Using a color scale
+  scale_fill_viridis_d(name = "Atividades") +  # Using a color scale
   theme_void() +  # Remove background, grid, numeric labels
   theme(
     legend.position = "right",  # Set legend position to right
@@ -698,8 +698,8 @@ ggplot(fluvial_df, aes(x = "", y = prop, fill = factor(`Origem de outra fonte de
     legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
   ) +
   labs(
-    title = "Número de registros de outras fontes de renda na zona fluvial",
-    subtitle = "Número total de pescadores com outras fontes de renda = 5 de 18 (total)"
+    title = "Registros de outras fontes de renda na zona fluvial",
+    subtitle = "Número total de pescadores com outras atividades = 4 de 18 (total)"
   )
 
 # Calculate proportions
@@ -709,38 +709,38 @@ transicao_df$prop <- transicao_df$"Número de registros" / sum(transicao_df$"Nú
 nova_tabela_trans <- transicao_df %>% arrange(desc(`Número de registros`))
 
 # Select the top 5 classes
-top_classes <- head(nova_tabela_trans, 5)
+#top_classes <- head(nova_tabela_trans, 5)
 
 # Summarize the remaining classes as 'Outros'
-outros <- nova_tabela_trans %>% slice(-(1:5)) %>% summarise(`Origem de outra fonte de renda` = "Outros","Zona"="Transição",
-                                                            `Número de registros` = sum(`Número de registros`),
-                                                            prop = sum(prop))
+#outros <- nova_tabela_trans %>% slice(-(1:5)) %>% summarise(`Origem de outra fonte de renda` = "Outros","Zona"="Transição",
+ #                                                           `Número de registros` = sum(`Número de registros`),
+  #                                                          prop = sum(prop))
 
 # Combine the top classes and 'Outros' into a new data frame
-nova_tabela_trans <- rbind(top_classes, outros)
+#nova_tabela_trans <- rbind(top_classes, outros)
 
 # Copiar o dataframe original
 df_novo <- nova_tabela_trans
 
 # Filtrar as linhas que possuem 'Outros' como a origem da fonte de renda
-outros <- df_novo[df_novo$`Origem de outra fonte de renda` == "Outros", ]
+#outros <- df_novo[df_novo$`Atividades durante piracema` == "Outros", ]
 
 # Somar os valores das linhas 'Outros' para obter a soma total
-soma_outros <- colSums(outros[, c("Número de registros", "prop")])
+#soma_outros <- colSums(outros[, c("Número de registros", "prop")])
 
 
 # Excluir as linhas 'Outros' do dataframe original
-df_novo <- df_novo[df_novo$`Origem de outra fonte de renda` != "Outros", ]
+#df_novo <- df_novo[df_novo$`Origem de outra fonte de renda` != "Outros", ]
 
-nova_linha<-c("Origem de outra fonte de renda"="Outros","Zona"="Transição",soma_outros)
+#nova_linha<-c("Origem de outra fonte de renda"="Outros","Zona"="Transição",soma_outros)
 
 # Adicionar a nova linha 'Outros (Agregado)' ao dataframe
-df_novo <- rbind(df_novo, nova_linha)
+#df_novo <- rbind(df_novo, nova_linha)
 
-ggplot(df_novo, aes(x = "", y = prop, fill = factor(`Origem de outra fonte de renda`))) +
+ggplot(df_novo, aes(x = "", y = prop, fill = factor(`Outra fonte de renda`))) +
   geom_bar(width = 1, stat = "identity") +
   coord_polar("y", start = 0) +
-  scale_fill_viridis_d(name = "Fontes de renda") +  # Using a color scale
+  scale_fill_viridis_d(name = "Atividades") +  # Using a color scale
   theme_void() +  # Remove background, grid, numeric labels
   theme(
     legend.position = "right",  # Set legend position to right
@@ -751,7 +751,7 @@ ggplot(df_novo, aes(x = "", y = prop, fill = factor(`Origem de outra fonte de re
   ) +
   labs(
     title = "Registros de outras fontes de renda na zona transição",
-    subtitle = "Número total de pescadores com outras fontes de renda = 20 de 44 (total)"
+    subtitle = "Número total de pescadores com outras atividades = 20 de 44 (total)"
   )
 
 # Calculate proportions
@@ -761,37 +761,37 @@ lacustre_df$prop <- lacustre_df$"Número de registros" / sum(lacustre_df$"Númer
 nova_tabela_trans <- lacustre_df %>% arrange(desc(`Número de registros`))
 
 # Select the top 5 classes
-top_classes <- head(nova_tabela_trans, 5)
+#top_classes <- head(nova_tabela_trans, 5)
 
 # Summarize the remaining classes as 'Outros'
-outros <- nova_tabela_trans %>% slice(-(1:5)) %>% summarise(`Origem de outra fonte de renda` = "Outros","Zona"="Transição",
-                                                            `Número de registros` = sum(`Número de registros`),
-                                                            prop = sum(prop))
+#outros <- nova_tabela_trans %>% slice(-(1:5)) %>% summarise(`Origem de outra fonte de renda` = "Outros","Zona"="Transição",
+ #                                                           `Número de registros` = sum(`Número de registros`),
+  #                                                          prop = sum(prop))
 
 # Combine the top classes and 'Outros' into a new data frame
-nova_tabela_trans <- rbind(top_classes, outros)
+#nova_tabela_trans <- rbind(top_classes, outros)
 
 # Copiar o dataframe original
 df_novo <- nova_tabela_trans
 
 # Filtrar as linhas que possuem 'Outros' como a origem da fonte de renda
-outros <- df_novo[df_novo$`Origem de outra fonte de renda` == "Outros", ]
+#outros <- df_novo[df_novo$`Origem de outra fonte de renda` == "Outros", ]
 
 # Somar os valores das linhas 'Outros' para obter a soma total
-soma_outros <- colSums(outros[, c("Número de registros", "prop")])
+#soma_outros <- colSums(outros[, c("Número de registros", "prop")])
 
 # Excluir as linhas 'Outros' do dataframe original
-df_novo <- df_novo[df_novo$`Origem de outra fonte de renda` != "Outros", ]
+#df_novo <- df_novo[df_novo$`Origem de outra fonte de renda` != "Outros", ]
 
-nova_linha<-c("Origem de outra fonte de renda"="Outros","Zona"="Lacustre",soma_outros)
+#nova_linha<-c("Origem de outra fonte de renda"="Outros","Zona"="Lacustre",soma_outros)
 
 # Adicionar a nova linha 'Outros (Agregado)' ao dataframe
-df_novo <- rbind(df_novo, nova_linha)
+#df_novo <- rbind(df_novo, nova_linha)
 
-ggplot(df_novo, aes(x = "", y = prop, fill = factor(`Origem de outra fonte de renda`))) +
+ggplot(df_novo, aes(x = "", y = prop, fill = factor(`Outra fonte de renda`))) +
   geom_bar(width = 1, stat = "identity") +
   coord_polar("y", start = 0) +
-  scale_fill_viridis_d(name = "Fontes de renda") +  # Using a color scale
+  scale_fill_viridis_d(name = "Atividades") +  # Using a color scale
   theme_void() +  # Remove background, grid, numeric labels
   theme(
     legend.position = "right",  # Set legend position to right
@@ -802,7 +802,7 @@ ggplot(df_novo, aes(x = "", y = prop, fill = factor(`Origem de outra fonte de re
   ) +
   labs(
     title = "Registros de outras fontes de renda na zona lacustre",
-    subtitle = "Número total de pescadores com outras fontes de renda = 127 de 179 (total)"
+    subtitle = "Número total de pescadores com outras atividades = 127 de 179 (total)"
   )
 
 ################
@@ -1117,7 +1117,18 @@ sum_by_zona[4,2]<-total_m2
 sum_by_zona$Zona.de.Pesca <- factor(sum_by_zona$Zona.de.Pesca, levels = c(levels(sum_by_zona$Zona.de.Pesca), "Geral"))
 sum_by_zona$Zona.de.Pesca[is.na(sum_by_zona$Zona.de.Pesca)] <- "Geral"
 
-write.xlsx(sum_by_zona, file = "tamanho total de redes.xlsx")
+mean_by_zona <- aggregate(m2 ~ Zona.de.Pesca, data = malhas, mean)
+
+mean_by_zona[4,]<- mean(malhas$m2)
+
+mean_by_zona$Zona.de.Pesca <- factor(mean_by_zona$Zona.de.Pesca, levels = c(levels(mean_by_zona$Zona.de.Pesca), "Geral"))
+mean_by_zona$Zona.de.Pesca[is.na(mean_by_zona$Zona.de.Pesca)] <- "Geral"
+
+sum_by_zona[,3]<-mean_by_zona[,2]
+
+colnames(sum_by_zona)<-c("Zona","total m2","média m2")
+
+write.xlsx(sum_by_zona, file = "tamanho de redes.xlsx")
 
 # Create a boxplot for each category of Zona.de.Pesca
 boxplot_zona <- ggplot(data = malhas) +
@@ -1169,6 +1180,28 @@ boxplot_all <- ggplot(data = malhas) +
 # Plot both boxplots side by side
 gridExtra::grid.arrange(boxplot_all, boxplot_zona, ncol = 2)
 
+color <- c("#045e9a", "#da2420","#009241")
+
+sum_zona<-sum_by_zona[-4,]
+
+sum_zona$prop <- sum_zona$"total m2" / sum(sum_zona$"total m2")
+
+ggplot(sum_zona, aes(x = "", y = `total m2`, fill = factor(`Zona`))) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0) +
+  scale_fill_manual(values = color, name = "Zona") +  # Using a color scale
+  theme_void() +  # Remove background, grid, numeric labels
+  theme(
+    legend.position = "right",  # Set legend position to right
+    legend.direction = "vertical",  # Set legend direction to vertical
+    legend.justification = "bottom",  # Adjust legend justification
+    legend.box.just = "right",  # Adjust legend box justification
+    legend.margin = margin(t = 0, r = 0, b = 0, l = -30)  # Adjust legend margin
+  ) +
+  labs(
+    title = "Tamanho de redes (m²)",
+    subtitle = "Tamanho total de redes em todas as zonas = 857977,50 m²"
+  )
 
 #tipo de barco
 barco <- aggregate(Seq ~ Nome.Completo+Material.do.Barco, data=socio_geral, length)
