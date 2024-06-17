@@ -1,0 +1,162 @@
+# biopesca and rendimento cruzados ####
+rm()
+setwd("C:/Users/lg_ri/Dropbox/Postdoc/UNIOESTE/Relatórios Itaipu/R rendimento")
+library(readxl)
+library(vegan)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(openxlsx)
+library(ggrepel)
+library(lubridate)
+rendimento <- data.frame(read_xlsx("Rendimento Pesqueiro 2023 ITAIPU (corrigido).xlsm", sheet="Banco de dados 2023"))
+rendimento$DATA <-as.Date(rendimento$DATA, format = "%d/%m/%Y") # Data em (mmm aaaa)
+rendimento$Seq <- seq(nrow(rendimento))
+
+#
+nspp<- aggregate(Seq ~ ESPÉCIES+CPUE.Espécie..kg.pescador.dia., data=rendimento, length)
+
+# Remove rows with NA or infinite values
+data <- na.omit(nspp[is.finite(nspp$CPUE.Espécie..kg.pescador.dia.), ])
+
+data <- subset(data, !grepl("TOTAL", ESPÉCIES))
+
+data <- data[data$ESPÉCIES != "Outros", ]
+
+# Calculate the mean and standard deviation for each ESPÉCIES category
+mean_data <- aggregate(CPUE.Espécie..kg.pescador.dia. ~ ESPÉCIES, data = data, FUN = mean)
+
+# Convert ESPÉCIES to a factor
+mean_data$ESPÉCIES <- factor(mean_data$ESPÉCIES, levels = mean_data$ESPÉCIES)
+
+# Order mean_data by CPUE.Espécie..kg.pescador.dia. in descending order
+mean_data <- mean_data[order(-mean_data$CPUE.Espécie..kg.pescador.dia.), ]
+
+
+# Define a vector of names to be replaced
+names_to_replace <- c("Plagioscion squamosissimus","Hypophthalmus oremaculatus","Pterodoras granulosus ",
+                      "Leporinus friderici","Leporinus lacustris","Leporinus octofasciatus","Leporinus tigrinus",
+                      "Leporinus unitaeniatus","Leporinus striatus","Schizodon altoparanae","Schizodon borellii",
+                      "Schizodon nasutus","Geophagus iporangensis","Geophagus sveni","Satanoperca setepele",
+                      "Hoplias mbigua","Hoplias sp2","Pinirampus pirinampu","Cyprinus carpio","Prochilodus lineatus",
+                      "Megaleporinus obtusidens","Megaleporinus piavussu","Cichla kelberi","Cichla piquiti",
+                      "Hypostomus albopunctatus", "Hypostomus ancistroides","Hypostomus cochliodon",
+                      "Hypostomus commersoni","Hypostomus margaritifer","Hypostomus microstomus","Hypostomus regani",
+                      "Hypostomus strigaticeps", "Hypostomus ternetzi","Megalancistrus parananus",
+                      "Pterygoplichthys ambrosettii", "Loricaria simillima", "Loricariichthys platymetopon",
+                      "Loricariichthys rostratus", "Proloricaria prolixa", "Rhinelepis aspera","Hemiodus orthonops",
+                      "Iheringichthys labrosus","Parapimelodus valenciennis","Pimelodus maculatus", "Pimelodus mysteriosus",
+                      "Pimelodus ornatus","Serrasalmus geryi","Serrasalmus maculatus","Serrasalmus marginatus",
+                      "Megaleporinus macrocephalus","Rhaphiodon vulpinus","Potamotrygon amandae","Potamotrygon falkneri","Auchenipterus osteomystax",
+                      "Oreochromis niloticus","Piaractus mesopotamicus","Ageneiosus inermis","Ageneiosus militaris","Ageneiosus ucayalensis",
+                      "Pseudoplatystoma reticulatum","Pseudoplatystoma corruscans","Brycon hilarii","Brycon orbignyanus",
+                      "Catathyridium jenynsii","Salminus brasiliensis","Zungaro jahu")
+
+# Define corresponding replacement names
+replacement_names <- c("Corvina","Perna-de-moça","Armado","Piau","Piau","Piau","Piau","Piau","Piau","Piau","Piau",
+                       "Piau","Cará","Cará","Cará","Traíra","Traíra","Barbado","Carpa","Curimba","Piapara","Piapara","Tucunaré","Tucunaré",
+                       "Cascudo","Cascudo","Cascudo","Cascudo","Cascudo","Cascudo","Cascudo","Cascudo","Cascudo","Cascudo",
+                       "Cascudo","Cascudo","Cascudo","Cascudo","Cascudo","Cascudo","Sardinha","Mandi","Mandi","Mandi","Mandi",
+                       "Mandi","Piranha","Piranha","Piranha","Piauçu","Dourado Cachorro","Raia","Raia",
+                       "Surumanha","Tilápia","Pacu","Bocudo","Bocudo","Bocudo","Surubim","Pintado","Piracanjuba",
+                       "Piracanjuba","Linguado","Dourado","Jaú")
+
+
+common_names_df <- data.frame(
+  Species = names_to_replace,
+  CommonName = replacement_names
+)
+
+#_______________________________________________
+############ Cálculo da % de cada spp cruzando rendimento e biopesca
+
+# Biopesca março a outubro de 2023 ####
+setwd("C:/Users/lg_ri/Dropbox/Postdoc/UNIOESTE/Relatórios Itaipu/R biopesca/Anual 2023")
+library(readxl)
+library(vegan)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(openxlsx)
+BioAnual23 <- data.frame(read_xlsx("BiopescaAnual23_3.0.xlsx", sheet="Biopesca"))
+Ord <- levels(factor(BioAnual23$Ordem))
+Fam <- levels(factor(BioAnual23$Familia))
+Spp <- levels(factor(BioAnual23$Genero))
+Comp <- levels(factor(interaction(BioAnual23$Ordem,
+                                  BioAnual23$Familia,
+                                  BioAnual23$Genero)))
+Comp # Lista de espécie
+BioAnual23$Mes <- format(BioAnual23$Data, "%b %Y") # Data em (mmm aaaa)
+BioAnual23$Mes <- factor(BioAnual23$Mes)
+BioAnual23$Seq <- seq(nrow(BioAnual23))
+
+
+nZona <- aggregate(N ~ Zona+Espécie, data=BioAnual23, sum)
+nZonaTab <- as.data.frame.matrix(xtabs(N~.,data=nZona))
+nspp <- aggregate(N ~ Espécie, data=BioAnual23, sum)
+tnZonaTab<-t(nZonaTab)
+
+# Esforço em número de pescadores
+nPescadorZona <- aggregate(Seq ~ Pescador+Zona, data=BioAnual23, length)
+nPescadorZona1 <- aggregate(Seq ~ Zona, data=nPescadorZona, length)
+nPescadorZona1Tab <- as.data.frame.matrix(t(xtabs(Seq ~., data=nPescadorZona1)))
+
+# Extract dimensions of the original data frame
+dimensions <- dim(tnZonaTab)
+num_rows <- dimensions[1]
+num_cols <- dimensions[2]
+
+# Create an empty data frame with the same dimensions
+nCPUEZona <- data.frame(matrix(nrow = num_rows, ncol = num_cols))
+i=1
+for(i in 1:nrow(tnZonaTab)){
+  nCPUEZona[i,] <- tnZonaTab[i,]/nPescadorZona1Tab
+}
+nomes_spp<-rownames(tnZonaTab)
+nCPUEZona$Geral <- rowSums(nCPUEZona)
+
+colnames(nCPUEZona)<-c("Fluvial","Lacustre","Transição","Geral")
+
+CPUE_spp<-nCPUEZona
+
+rownames(CPUE_spp)<-nomes_spp
+
+# Convert row names to an actual column
+CPUE_spp$Species <- rownames(CPUE_spp)
+# Remove row names
+rownames(CPUE_spp) <- NULL
+
+merged_df <- merge(CPUE_spp, common_names_df, by = "Species", all.x = TRUE)
+
+# Calculate percentage contribution of each species
+CPUE_spp <- CPUE_spp %>%
+  mutate(Percentage = Geral / sum(Geral) * 100)
+
+# Filter out rows where CommonName is not NA
+filtered_df <- merged_df %>% filter(!is.na(CommonName))
+
+# Calculate the total sum of the 'Geral' column for these filtered rows
+filtered_df <- filtered_df %>%
+  group_by(CommonName) %>%
+  mutate(Total_Geral = sum(Geral))
+
+# Calculate the percentage contribution of each species' 'Geral' value
+filtered_df <- filtered_df %>%
+  mutate(Percentage = (Geral / Total_Geral) * 100)
+
+filtered_df<-as.data.frame(filtered_df)
+
+mean_data
+
+merged_data <- merge(filtered_df, mean_data, by.x = "CommonName", by.y = "ESPÉCIES")
+
+merged_data <- merged_data %>%
+  mutate(Adjusted_CPUE = CPUE.Espécie..kg.pescador.dia. * (Percentage / 100))
+
+adjusted_cpue_df<-merged_data[,-c(3,4,5,6,7,9)]
+
+setwd("C:/Users/lg_ri/Dropbox/Postdoc/UNIOESTE/Relatórios Itaipu/R rendimento")
+write.xlsx(adjusted_cpue_df, "adjusted_cpue.xlsx", rowNames = FALSE)
+
+#_______________________________________________
+
